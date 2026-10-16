@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "mcu": "STM32F103C8T6",
+  "hardware_verified": false,
+  "hardware_observations": {
+    "gpio_oled_diagnostic": "User confirmed all patterns display at delay=192",
+    "normal_game_v0.1.1": "User confirmed normal game works at delay=24",
+    "buzzer_v1.0.0": "Enabled and host-tested; physical sound and acoustic feedback pending"
+  },
+  "game_sound_default": true,
+  "flash_origin": "0x08000000",
+  "flash_limit": 65536,
+  "ram_limit": 20480,
+  "environments": {
+    "board_selftest": {
+      "flash_used": 28508,
+      "static_ram_used": 10544,
+      "ram_used_including_linker_reserve": 12080,
+      "bin_size": 28512,
+      "initial_stack": "0x20005000",
+      "reset_vector": "0x8005c25",
+      "irq_vectors_match": true,
+      "hex_matches_bin": true,
+      "display_transport": "GPIO SPI"
+    },
+    "flappy_f103": {
+      "flash_used": 28560,
+      "static_ram_used": 10544,
+      "ram_used_including_linker_reserve": 12080,
+      "bin_size": 28560,
+      "initial_stack": "0x20005000",
+      "reset_vector": "0x8005c59",
+      "irq_vectors_match": true,
+      "hex_matches_bin": true,
+      "display_transport": "GPIO SPI"
+    },
+    "flappy_f103_compat": {
+      "flash_used": 28560,
+      "static_ram_used": 10544,
+      "ram_used_including_linker_reserve": 12080,
+      "bin_size": 28560,
+      "initial_stack": "0x20005000",
+      "reset_vector": "0x8005c59",
+      "irq_vectors_match": true,
+      "hex_matches_bin": true,
+      "display_transport": "GPIO SPI"
+    }
+  },
+  "dependencies": {
+    "toolchain-gccarmnoneeabi": "1.70201.0",
+    "framework-stm32cubef1": "1.8.7",
+    "tool-ldscripts-ststm32": "0.3.0"
+  }
+}

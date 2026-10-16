@@ -1,0 +1,96 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>完整游戏版上手步骤</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../index.html">学习包首页</a><a href="GAME_QUICKSTART.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#1">1. 烧入哪个文件</a></li>
+<li><a href="#2">2. 开始玩</a></li>
+<li><a href="#3">3. 用串口辅助操作</a></li>
+<li><a href="#4">4. 声音不合适时怎么调</a></li>
+<li><a href="#5">5. 想改游戏代码时从哪里开始</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="_1">完整游戏版上手步骤</h1>
+<p>当前已经确认自检D2短闪、GPIO SPI诊断图案，以及等待24次的正常游戏版运行正常。v1.0.0沿用正常版显示方式，默认启用得分与碰撞短音；声音控制保持不变。新音效的实物响声和声学反馈尚待这次烧录确认。</p>
+<h2 id="1">1. 烧入哪个文件</h2>
+<p>使用发布包中的 <strong><code>firmware/flappy_f103.hex</code></strong>。<code>board_selftest.hex</code>是启动后进入自检页面的版本。</p>
+<p>正常游戏版使用已测试正常的24次GPIO等待。如果换接线或模块后出现显示异常，可用<code>firmware/flappy_f103_compat.hex</code>作192次等待的兼容对照，游戏功能相同但画面较慢。两个游戏版的D2均为每秒单短闪。完整教学包内固件位于<code>01_firmware/</code>，独立固件包内位于<code>firmware/</code>。</p>
+<p>Windows文件位置：</p>
+<pre><code class="language-text">\\wsl.localhost\Ubuntu-24.04\home\cunyu\outputs\Flappy_Bird_Firmware_v1.0.0_20260923\firmware\flappy_f103.hex
+</code></pre>
+<p>沿用已连接成功的接线与设置：主板USB供电，ST-LINK接GND、SWDIO、SWCLK，ST-LINK的3.3V/5V供电脚留空；CubeProgrammer选SWD、100kHz、Normal、Software reset。</p>
+<p>打开“擦除与编程”页面，选择这个HEX，开启烧录校验和烧录后运行，再开始下载。HEX自带地址，无需手动指定。若校验成功后未运行，先断开软件连接，再重新给主板USB上电。不需要操作选项字节或读保护。</p>
+<h2 id="2">2. 开始玩</h2>
+<ol>
+<li>上电后保持安静约1.5秒，让程序测量环境底噪。准备界面先显示<code>KEEP QUIET...</code>，完成后显示<code>BLOW TO START</code>。</li>
+<li>对着麦克风短吹一口气，开始游戏，小鸟向上跳。</li>
+<li>每次短吹都会再次上跳；不吹时小鸟逐渐下落。管道向左移动，控制小鸟穿过缺口。</li>
+<li>通过一组管道加1分；碰到管道、顶部或地面后显示<code>GAME OVER</code>与<code>BLOW TO RETRY</code>。</li>
+<li>安静片刻，再短吹一口气重新开始。最高分在本次上电期间保留，断电后清零。</li>
+</ol>
+<p>得分和碰撞会短响约60毫秒。为了避免麦克风把蜂鸣器当成吹气，从响声开始有300毫秒的声控屏蔽，随后需要安静片刻再吹。串口发送<code>mute on</code>可关闭游戏音效，<code>mute off</code>恢复；这两个命令不关闭声控。上电和普通上跳不鸣叫。</p>
+<p>要使用一口一口的短吹，中间停一下。程序要求声音先回落至少50毫秒，并且两次触发至少间隔180毫秒，持续吹气不会不断上跳。</p>
+<h2 id="3">3. 用串口辅助操作</h2>
+<p>USB-TTL使用3.3V逻辑，RXD接主板J4的2脚，TXD接3脚，GND接4脚，VCC留空。串口设115200、8N1、无流控；每条命令以换行结束。</p>
+<table>
+<thead>
+<tr>
+<th>想做什么</th>
+<th>发送内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查看采样、门限和当前状态</td>
+<td><code>status</code></td>
+</tr>
+<tr>
+<td>直接开始一局</td>
+<td><code>play</code></td>
+</tr>
+<tr>
+<td>让小鸟上跳一次</td>
+<td><code>flap</code></td>
+</tr>
+<tr>
+<td>暂停 / 继续</td>
+<td><code>pause</code> / <code>resume</code></td>
+</tr>
+<tr>
+<td>返回准备界面</td>
+<td><code>menu</code></td>
+</tr>
+<tr>
+<td>重新测量底噪</td>
+<td><code>cal</code>，随后保持安静约1.5秒</td>
+</tr>
+<tr>
+<td>查看自检页面 / 调音页面</td>
+<td><code>diag</code> / <code>tuner</code></td>
+</tr>
+</tbody>
+</table>
+<p>本批主板的SW1–SW4存在触点接法问题，未返修时会被固件屏蔽。当前使用声音开局、上跳和重开，暂停与继续使用串口。<code>BLOCKED=F</code>表示四个故障键已被屏蔽，不会阻塞游戏。</p>
+<h2 id="4">4. 声音不合适时怎么调</h2>
+<p>先发<code>status</code>查看安静和短吹时的<code>RMS</code>，再把触发门限设在这两个数值之间。例如安静约30、短吹约250，可以先尝试<code>threshold 100</code>。门限调低更灵敏，调高更不容易误触发。</p>
+<p>也可以发送<code>pot on</code>，让J5电位器调节门限；发送<code>pot off</code>停止电位器控制。<code>threshold</code>命令会自动关闭电位器控制。修改的门限仅保存在RAM中，重新上电会重新标定。</p>
+<p>若安静和短吹时RMS都几乎不变，先检查麦克风与模拟采样；若串口可操作游戏而屏幕黑屏，先检查屏幕供电、7根信号接线和SPI配置。</p>
+<h2 id="5">5. 想改游戏代码时从哪里开始</h2>
+<p>源码位于发布包的<code>source/</code>目录中：</p>
+<ul>
+<li><code>src/main.c</code>：七个任务按顺序运行，是阅读入口。</li>
+<li><code>include/app_config.h</code>：集中修改灵敏度、小鸟重力、上跳速度、管道速度和缺口高度。</li>
+<li><code>src/core.c</code>：小鸟运动、管道移动、碰撞和计分的具体算法。</li>
+<li><code>src/app.c</code>：连接声音、游戏、串口和画面。</li>
+<li><a href="BEGINNER_GUIDE.html">新手设计说明</a>：从上电到各模块工作的中文说明及练习。</li>
+</ul>
+<p>用户已确认正常游戏版测试正常，本版新增默认音效仍需实物确认。显示驱动每轮最多发送8字节，并跳过未变化区域；这些措施减少主循环单次等待，但不能代替定量帧率和ADC丢块测试。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

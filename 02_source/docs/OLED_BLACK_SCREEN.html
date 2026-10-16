@@ -1,0 +1,182 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>屏幕黑屏诊断记录与操作</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../index.html">学习包首页</a><a href="OLED_BLACK_SCREEN.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">已确认的实物情况</a></li>
+<li><a href="#_3">使用独立亮屏诊断固件</a></li>
+<li><a href="#d2">看D2和屏幕分别出现什么</a></li>
+<li><a href="#_4">接线再次对照</a></li>
+<li><a href="#_5">已完成：检查信号线连续性</a></li>
+<li><a href="#gpio-spi">已完成：低速GPIO SPI对照</a></li>
+<li><a href="#_6">参考与判断边界</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="_1">屏幕黑屏诊断记录与操作</h1>
+<p><strong>2026-09-23最新结果：GPIO诊断显示成功后，用户也确认了正常游戏版运行正常。</strong> 正式v1.0.0沿用这一GPIO发送方式并默认启用蜂鸣器，见<a href="GAME_QUICKSTART.html">游戏操作步骤</a>。下面保留黑屏诊断过程，不需要重复烧录已完成的诊断固件。</p>
+<h2 id="_2">已确认的实物情况</h2>
+<p>2026-09-22，用户确认：</p>
+<ul>
+<li>屏幕为微雪2.42英寸SSD1309，未改过SPI/I²C焊接设置。</li>
+<li>接着屏幕时D2仍每秒短闪。</li>
+<li>在屏幕端测得VCC对GND约3.3V，RST对GND约3.3V。</li>
+<li>所有供电断开后重新上电，仍无显示；USB转串口暂未连接。</li>
+<li>独立<code>oled_check.hex</code>烧录后，D2每秒双短闪，观察所有阶段屏幕始终黑屏。诊断程序未记录板级故障或SPI发送错误，但全亮命令没有产生可见效果；目前不能认定屏幕已损坏，也未证明命令实际到达屏幕。</li>
+<li>断电逐根测量J2-3/4/5/6/7到屏幕DIN/CLK/CS/DC/RST，用户确认均接近0Ω且一一对应。此结果支持排线与接口的直连连续性正常，但不证明芯片已经输出正确的电平变化。</li>
+<li>换用<code>oled_check_gpio.hex</code>后用户确认画面正常周期变化，低速GPIO发送路径通过实物验证；原硬件SPI失败的具体原因仍未确定。</li>
+</ul>
+<p>这些数据支持屏幕接口供电和复位脚稳态电压正常，但不能证明RST曾产生启动复位脉冲，也不能证明CLK、DIN、CS、DC的信号实际到达屏幕。SPI是单向发送，本机发送成功不代表屏幕收到。</p>
+<h2 id="_3">使用独立亮屏诊断固件</h2>
+<p>烧入独立交付目录中的<code>oled_check.hex</code>。沿用已经成功的CubeProgrammer设置，开启烧录校验。烧录后保持屏幕接线不变，重新给主板完整上电，观察至少15秒。</p>
+<p>诊断程序沿用游戏版的板级引脚、SPI设置和屏幕初始化，循环显示：</p>
+<ol>
+<li><strong>全亮约2秒</strong>：发送SSD1309的<code>A5</code>命令，忽略显存内容。</li>
+<li><strong>黑屏约1秒</strong>：发送<code>A4</code>恢复显存显示，写入全黑像素。</li>
+<li><strong>棋盘格约3秒</strong>：检查页寻址和数据传输。</li>
+<li><strong>文字与边框约3秒</strong>：显示<code>OLED CHECK</code>和<code>SPI / RAM OK</code>，检查实际绘图与显示。</li>
+</ol>
+<p>这里的<code>SPI / RAM OK</code>只是测试图案文字，含义是用户实际看见该画面后，才能判断对应路径已工作；固件无法自动知道屏幕是否亮起。</p>
+<p>蜂鸣器始终关闭。本程序不运行游戏、声音控制或调音。烧入它会暂时替换游戏，诊断结束后可重新烧回<code>flappy_f103.hex</code>。</p>
+<h2 id="d2">看D2和屏幕分别出现什么</h2>
+<table>
+<thead>
+<tr>
+<th>观察结果</th>
+<th>能说明什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D2每秒双短闪</td>
+<td>诊断入口正在运行，尚未记录板级故障或SPI发送错误；不等于屏幕已连接</td>
+</tr>
+<tr>
+<td>D2持续快闪</td>
+<td>记录了板级故障或SPI发送失败，下一步读取串口日志定位</td>
+</tr>
+<tr>
+<td>全亮能出现，棋盘格/文字不出现</td>
+<td>至少部分命令到达且面板能够发光，重点检查DC、数据传输和寻址</td>
+</tr>
+<tr>
+<td>全亮、棋盘格和文字都正常</td>
+<td>基本显示链路可用，下一步重新检查游戏固件的实际烧录及应用运行</td>
+</tr>
+<tr>
+<td>所有阶段始终黑屏</td>
+<td>尚不能区分信号未到达、接口配置或模块内部供电/面板问题，继续查接线和波形</td>
+</tr>
+</tbody>
+</table>
+<p>如果D2仍是原来的每秒单短闪，先确认是否选中了<code>oled_check.hex</code>、烧录校验是否成功，以及是否重新上电。</p>
+<p>如接串口，设115200、8N1。诊断固件自动每秒输出当前显示阶段、<code>SPI_ERR</code>和<code>FAULT</code>，无需发送命令。</p>
+<h2 id="_4">接线再次对照</h2>
+<p>元件面朝自己、主板USB在上时，J2在右侧，<strong>最下面为1脚，最上面为8脚</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>J2脚</th>
+<th>屏幕端</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>VCC，3.3V</td>
+</tr>
+<tr>
+<td>2</td>
+<td>GND</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DIN</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CLK</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CS</td>
+</tr>
+<tr>
+<td>6</td>
+<td>DC</td>
+</tr>
+<tr>
+<td>7</td>
+<td>RST</td>
+</tr>
+<tr>
+<td>8</td>
+<td>留空，备用地</td>
+</tr>
+</tbody>
+</table>
+<p>屏幕端按丝印对应，不按排线颜色猜测。调整排线、使用通断或电阻档前断开全部供电；有电时只用电压档。</p>
+<h2 id="_5">已完成：检查信号线连续性</h2>
+<p>拔掉主板、ST-LINK及USB转串口的全部供电，屏幕排线保持连接。用电阻/通断档，直接测主板J2焊点与屏幕对应焊点，避免只测到杜邦线本身而遗漏排母接触或焊点。</p>
+<table>
+<thead>
+<tr>
+<th>主板端</th>
+<th>屏幕端</th>
+<th>直连接线预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>J2-3</td>
+<td>DIN</td>
+<td>接近0Ω</td>
+</tr>
+<tr>
+<td>J2-4</td>
+<td>CLK</td>
+<td>接近0Ω</td>
+</tr>
+<tr>
+<td>J2-5</td>
+<td>CS</td>
+<td>接近0Ω</td>
+</tr>
+<tr>
+<td>J2-6</td>
+<td>DC</td>
+<td>接近0Ω</td>
+</tr>
+<tr>
+<td>J2-7</td>
+<td>RST</td>
+<td>接近0Ω</td>
+</tr>
+</tbody>
+</table>
+<p>先把两支表笔短接，观察表笔自身电阻；直连线读数应接近这个值。不能只凭蜂鸣档响了就判定良好，部分万用表几十欧姆也会响。</p>
+<p>此处只检查正确信号能否从主板接口到达屏幕接口；全部导通仍不能证明芯片引脚发出了正确波形。记录实际结果后，再决定是否需要测时序、接口选择或模块内部供电，不根据黑屏直接更换初始化参数。</p>
+<h2 id="gpio-spi">已完成：低速GPIO SPI对照</h2>
+<p>使用独立的<code>oled_check_gpio.hex</code>。它和第一次诊断使用相同接线、主频选择、复位、初始化及全亮/棋盘格流程，只将数据发送改成普通GPIO逐位输出。CLK空闲低、上升沿采样、每字节高位先发；边沿之间增加简单等待，便于和原硬件SPI发送路径进行对照。这个等待不承诺精确频率。</p>
+<p>烧录校验成功后完整重新上电，观察至少20秒。正常D2变为<strong>每秒三短闪</strong>，与第一版的双短闪区分；发生板级故障时仍均匀快闪。蜂鸣器关闭，不需要改接线或接串口。</p>
+<ul>
+<li>如果这版可以显示，说明同一屏幕与初始化至少在低速GPIO传输下有效，重点继续定位硬件SPI配置、发送波形和时序；尚不能仅凭这一结果断言是某一项配置错误。</li>
+<li>如果仍然黑屏，下一步核对屏幕实物背面的接口选择和内部电源，或使用逻辑分析仪观察信号。继续盲目更换游戏绘图代码没有依据。</li>
+</ul>
+<p>软件模拟SPI不读取屏幕应答，三短闪本身不代表屏幕已收到命令。本次有效证据来自用户实际看见全亮、棋盘格和文字；新游戏版本的速度与交互仍需上板确认。</p>
+<h2 id="_6">参考与判断边界</h2>
+<p>初始化已对照微雪官方例程和SSD1309手册，没有找到确定的必要命令缺失。<code>FD 12</code>为解锁，<code>DB 34</code>为手册明确的VCOMH默认设置，不能仅因官方示例用了不同数值就断定黑屏原因。</p>
+<p>微雪模块板上有独立升压电路，因此接口3.3V正常并不能证明面板内部驱动电源正常；当前不要求初学者直接测量密集的小元件。</p>
+<ul>
+<li><a href="https://files.waveshare.com/wiki/2.42inch-OLED-Module/2.42inch-OLED-Module-Schematic.pdf">微雪模块原理图</a></li>
+<li><a href="https://files.waveshare.com/wiki/2.42inch-OLED-Module/SSD1309Datasheet.pdf">SSD1309手册，第27页A4/A5命令</a></li>
+</ul>
+<p>本机自动测试只能检查诊断命令、图案和错误指示的代码路径，实际显示结果仍需用户观察；这份诊断固件不代表黑屏已经修复。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

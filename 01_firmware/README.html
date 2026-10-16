@@ -1,0 +1,51 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择要烧录的固件</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../index.html">学习包首页</a><a href="README.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside><article><h1 id="_1">选择要烧录的固件</h1>
+<p>优先选择 <strong><a href="flappy_f103.hex">flappy_f103.hex</a></strong>。这是v1.0.0完整游戏：已验证的正常GPIO SPI方式，默认启用得分/碰撞蜂鸣器。</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="flappy_f103.hex">flappy_f103.hex</a></td>
+<td>正常游戏，首选</td>
+</tr>
+<tr>
+<td><a href="flappy_f103_compat.hex">flappy_f103_compat.hex</a></td>
+<td>更慢的GPIO传输，显示异常时用于对照，功能相同</td>
+</tr>
+<tr>
+<td><a href="board_selftest.hex">board_selftest.hex</a></td>
+<td>上电进入自检，内部时钟64MHz，适合查采样与串口</td>
+</tr>
+<tr>
+<td>同名<code>.bin</code></td>
+<td>原始二进制；使用时手动指定起始地址<code>0x08000000</code></td>
+</tr>
+<tr>
+<td>同名<code>.elf</code></td>
+<td>含符号的调试文件，后续学习断点调试时使用</td>
+</tr>
+</tbody>
+</table>
+<p>HEX自带地址，初学者优先使用HEX。STM32CubeProgrammer保持已成功的SWD、100kHz、Normal、Software reset，开启下载后校验。不修改读保护或其他选项字节。</p>
+<p>主板USB供电，ST-LINK只接SWDIO、SWCLK、GND；当前小型ST-LINK V2的3.3V/5V输出留空。详细接线见<a href="../02_source/docs/HARDWARE_AS_BUILT_AND_ERRATA.html">硬件说明</a>。</p>
+<p>上电安静约1.5秒，看到<code>BLOW TO START</code>后短吹开局。得分或碰撞会短响；普通上跳不响，避免过多声学反馈。音效关闭可发<code>mute on</code>，声控仍然有效。</p>
+<p>既有正常游戏已经用户实测，新版默认音效仍需听实际响声并观察是否误触发。当前完整功能验证边界见<a href="../02_source/docs/VERIFICATION.html">验证记录</a>。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

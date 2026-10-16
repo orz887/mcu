@@ -1,0 +1,59 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PCB资料：对应现有样板的原生产档</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../index.html">学习包首页</a><a href="README.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside><article><h1 id="pcb">PCB资料：对应现有样板的原生产档</h1>
+<blockquote>
+<p><strong>以下原件包含已确认的SW1～SW5按键触点接法错误，没有在本次正式软件发布中修订。不可照原样直接复产。</strong> 先读<a href="../02_source/docs/HARDWARE_AS_BUILT_AND_ERRATA.html">当前样板与硬件勘误</a>。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>是什么</th>
+<th>用什么打开</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="as_built/Flappy_Bird_REVIEWED_20260918.epro2">EDA源工程</a></td>
+<td>原理图与PCB编辑工程</td>
+<td>立创EDA专业版，导入本地工程</td>
+</tr>
+<tr>
+<td><a href="as_built/Flappy_Bird_PCB1_20260918_Gerber.zip">Gerber压缩包</a></td>
+<td>原设计铜层、阻焊、丝印、钻孔等制造信息</td>
+<td>Gerber查看器或DFM工具，先检查勘误</td>
+</tr>
+<tr>
+<td><a href="as_built/Flappy_Bird_BOM_20260918.csv">BOM</a></td>
+<td>器件清单，说明买什么、焊什么</td>
+<td>表格软件，UTF-8文本</td>
+</tr>
+<tr>
+<td><a href="as_built/Flappy_Bird_PCB1_CPL_20260918.csv">SMT坐标</a></td>
+<td>元件位置、角度、面别，供贴片机使用</td>
+<td>表格软件/贴片下单工具</td>
+</tr>
+<tr>
+<td><a href="as_built/render_final_board.png">PCB全图</a></td>
+<td>设计阶段布局预览</td>
+<td>浏览器/图片查看器</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="原样板PCB设计预览" src="as_built/render_final_board.png" /></p>
+<p>Gerber是原设计导出，不能等同于后续订单中工厂修改过的生产稿。项目里没有获得完整工厂加工稿的可核验副本，不能替它作一致性保证。</p>
+<p>完整原始工作记录、DRC/DFM检查、复位诊断、布线脚本和JSON证据保留于<a href="../06_history/original_workspace/flappy-bird-pcb-repair-20260918/README.md">原始PCB工作目录</a>。这里面的旧“可打样”结论应结合后来发现的按键错误阅读，当前判断以本目录说明与硬件勘误为准。</p>
+<p>准备新一版硬件时，先在EDA源工程中正确划分开关内部常通触点，再同步PCB、重布相关网络并重新做电气与制造检查。<strong>修改源工程之后必须重新导出Gerber、BOM与坐标，不能继续使用本包旧制造文件。</strong></p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

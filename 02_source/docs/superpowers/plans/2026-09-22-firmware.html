@@ -1,0 +1,78 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flappy Bird 固件实施计划</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../../../index.html">学习包首页</a><a href="2026-09-22-firmware.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_1">全局约束</a></li>
+<li><a href="#_2">重点审查</a></li>
+<li><a href="#task-1">Task 1: 算法层</a></li>
+<li><a href="#task-2">Task 2: 硬件层与构建</a></li>
+<li><a href="#task-3">Task 3: 显示与应用</a></li>
+<li><a href="#task-4">Task 4: 审查与交付</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="flappy-bird">Flappy Bird 固件实施计划</h1>
+<blockquote>
+<p>使用 executing-plans 的持续执行和记录方法；独立模块并行实现。用户已要求开始开发，按既有功能和硬件继续，不额外提交分支或要求重复授权。</p>
+</blockquote>
+<p><strong>Goal:</strong> 交付可烧录的自检和声控游戏首版固件及源码。</p>
+<p><strong>Architecture:</strong> STM32Cube HAL 硬件层、纯C算法层、页式显示层、协作主循环。DMA和中断仅搬运/通知，业务处理在主循环。</p>
+<p><strong>Tech Stack:</strong> C11、PlatformIO ststm32 20.0.0、STM32CubeF1、GNU Arm、原生gcc算法验证。</p>
+<p><strong>Spec:</strong> ../../DESIGN.md</p>
+<h2 id="_1">全局约束</h2>
+<ul>
+<li>STM32F103C8T6：64KB Flash、20KB RAM，8MHz外部晶振，保留SWD；不修改硬件、不自动烧录。</li>
+<li>声控游戏+自检+调音；仅给出已编译和模拟验证范围，不冒称实物验证。</li>
+<li>不创建 Git 分支或提交；新项目独立目录。用户随后明确要求中文教学注释，优先于原通用“不新增内联注释”规则。</li>
+<li>固件不能修复 SW1–SW4 硬短路，启动时未释放的按键不得触发动作。</li>
+<li>所有有界等待均须短且有错误退出；启动屏幕复位采用状态机。</li>
+</ul>
+<h2 id="_2">重点审查</h2>
+<ul>
+<li>持续低电平按键、DMA滞后/覆盖、无屏幕和无电位器时保持可调试。</li>
+<li>时间回绕、长按和持续吹气不重复触发事件。</li>
+<li>普通float优先可读性，调音分步执行以保持采样和串口响应，不做手写定点优化。</li>
+<li>串口畸形/超长参数不能引发意外命令或内存越界。</li>
+<li>UART/DMA中断共享数据与OLED未发完就改变CS/DC的竞态。</li>
+</ul>
+<h2 id="task-1">Task 1: 算法层</h2>
+<p>文件 include/core.h、src/core.c、tests/core_test.c。</p>
+<ul>
+<li>[x] 先建立去直流/音量门限、按键释放门控、游戏状态、已知频率验证用例，并确认未实现行为失败。</li>
+<li>[x] 实现直观音频统计和带安静重装的触发门、按键消抖及启动低电平屏蔽。</li>
+<li>[x] 实现固定20ms游戏物理、管道/碰撞/计分、暂停和重开。</li>
+<li>[x] 实现有明确每次计算预算的调音器，验证正弦/谐波/静音/削顶。</li>
+<li>[x] 运行原生gcc验证并记录结果。</li>
+</ul>
+<h2 id="task-2">Task 2: 硬件层与构建</h2>
+<p>文件 platformio.ini、include/stm32f1xx_hal_conf.h、include/board.h、src/board.c。</p>
+<ul>
+<li>[x] 安装项目限定构建依赖，采用STM32F103C8的启动与链接脚本。</li>
+<li>[x] 实现主时钟及HSI回退、GPIO/SPI/USART/TIM/ADC/DMA，逐项检查HAL返回值。</li>
+<li>[x] 实现UART队列、DMA块的安全复制/覆盖检测、SPI发送及错误计数。</li>
+<li>[x] 编译可运行硬件入口，检查向量表、容量和中断符号。</li>
+</ul>
+<h2 id="task-3">Task 3: 显示与应用</h2>
+<p>文件 include/display.h、src/display.c、src/main.c。</p>
+<ul>
+<li>[x] 按原厂SSD1309手册实现页模式初始化和非阻塞复位；帧缓存边界裁剪。</li>
+<li>[x] 实现游戏/自检/调音界面、UART命令和阈值/VDDA配置。</li>
+<li>[x] 整合采样优先级、固定时步、显示页调度、状态灯及短音。</li>
+<li>[x] 完成主版本与自检版本实际构建，运行整体检查。</li>
+</ul>
+<h2 id="task-4">Task 4: 审查与交付</h2>
+<ul>
+<li>[x] 独立审查初始化、共享缓冲、未知外设、故障按键、参数范围和资源占用。</li>
+<li>[x] 修复发现的问题，再运行相关验证和双版本构建。</li>
+<li>[x] 导出HEX/BIN/ELF、发布清单及SHA256，编写中文烧录/接线/首次自检指南。</li>
+<li>[x] 验证压缩包内容，向用户交付优先自检固件，明确尚待实测项目。</li>
+</ul><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

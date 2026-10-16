@@ -1,0 +1,55 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V4外壳与装配</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../index.html">学习包首页</a><a href="README.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside><article><h1 id="v4">V4外壳与装配</h1>
+<p>本版针对70×70mm主板及微雪2.42英寸白色OLED模块设计。先确认手中屏幕型号与尺寸，早期72×43mm其他模块不属于这个V4适配对象。</p>
+<p>推荐先看<a href="V4/assembly/ASSEMBLY_GUIDE.html">装配图解</a>，再对照实际样板试装。</p>
+<p><img alt="V4总装模型示意" src="V4/assembly/V4_assembled.png" /></p>
+<table>
+<thead>
+<tr>
+<th>目录或文件</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="V4/print/">print</a></td>
+<td>9个STL：8个装配件加1个配合测试件，供切片/3D打印</td>
+</tr>
+<tr>
+<td><a href="V4/step/">step</a></td>
+<td>分件STEP，便于CAD查看和继续改尺寸</td>
+</tr>
+<tr>
+<td><a href="V4/assembly/V4_complete_assembly.step">总装STEP</a></td>
+<td>带主板、屏幕与紧固件示意的完整装配模型</td>
+</tr>
+<tr>
+<td><a href="V4/assembly/V4_complete_assembly.glb">总装GLB</a></td>
+<td>在支持GLB的3D查看器中旋转观察</td>
+</tr>
+<tr>
+<td><a href="V4/assembly/V4_exploded.png">爆炸图</a></td>
+<td>查看零件分层、装配关系</td>
+</tr>
+<tr>
+<td><a href="V4/Flappy_Bird_V4_CurrentPCB_20260918.epro2">EDA外壳工程</a></td>
+<td>对应V4壳体的EDA工程副本，不是新修订的PCB制造版本</td>
+</tr>
+</tbody>
+</table>
+<p>原始CAD脚本及其V3依赖一起保留于<a href="../06_history/original_workspace/flappy-bird-enclosure-sync-20260918/README.md">原始外壳工作区</a>，相邻目录名未改变。部分旧脚本包含原机器绝对路径、中文字体路径或EDA API写操作，移动到新电脑后须先读代码、改路径；不需要运行这些脚本才能使用STL或STEP。</p>
+<p>已有检查覆盖网格和模型静态干涉，<strong>尚无整套外壳实物装配通过的记录</strong>。先打印配合测试件并试装，再确认螺钉、排线弯折、实际焊接高度。先把主板功能调通再合盖，避免误把接线问题当成外壳问题。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

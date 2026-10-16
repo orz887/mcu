@@ -1,0 +1,38 @@
+{
+  "ASSEMBLY_GUIDE.md": {
+    "bytes": 5034,
+    "sha256": "4aa5bb902f030e2667cf8bf9826e0a89c5ac5e58bb6833e1bf091b6c1240d7d4"
+  },
+  "V4_assembled.png": {
+    "bytes": 126393,
+    "sha256": "18c8f0e1eebc4033dcc8974562b1221037d550e1d178102ad87f9002a870ab34"
+  },
+  "V4_base_install.png": {
+    "bytes": 133023,
+    "sha256": "5747dd5689ccbbf3a84342a77bae61f5ae0a3c7231d68098787d9f7ef6be2241"
+  },
+  "V4_complete_assembly.glb": {
+    "bytes": 5161556,
+    "sha256": "41cb6afde5e50f3dba73739cd9aefe4364c46eae8c16e0f09ced84939fc4fe5f"
+  },
+  "V4_complete_assembly.step": {
+    "bytes": 29698965,
+    "sha256": "51069a63e47935e7fbcd72b08e46b5eee227b459155f46f2d9cc8f12cd45e615"
+  },
+  "V4_exploded.png": {
+    "bytes": 241067,
+    "sha256": "bbe39264f6e751831ba4f0665da7a5b1a40ab0c39a710199208edf39e54b979b"
+  },
+  "V4_housing_assembled.step": {
+    "bytes": 7715382,
+    "sha256": "d528fc664833389ff102abd0563ccdf7e08d0e5fc200ec29b0303d3b7dc42b9d"
+  },
+  "V4_lid_underside.png": {
+    "bytes": 141582,
+    "sha256": "73896c8851d578699c6bc43574cdc3059665f2c6fd6bab912b60d321e116281c"
+  },
+  "assembly_validation.json": {
+    "bytes": 716,
+    "sha256": "cb9f56b44cccbc014baf0075c81502aef5c537f772868e78d1b1635b4db7449f"
+  }
+}

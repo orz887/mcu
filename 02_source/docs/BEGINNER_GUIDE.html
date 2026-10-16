@@ -1,0 +1,536 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>从会写 C 到看懂声控小鸟</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../index.html">学习包首页</a><a href="BEGINNER_GUIDE.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#1">1. 先找到入口，再按需要找文件</a></li>
+<li><a href="#2">2. 上电后发生什么</a><ul>
+<li><a href="#_1">主循环负责决定，中断负责及时记下事情</a></li>
+</ul>
+</li>
+<li><a href="#3-delay">3. 为什么看时间差，而不是到处写 delay</a></li>
+<li><a href="#4">4. 麦克风读数怎样变成一次上跳</a><ul>
+<li><a href="#2048">2048 附近是安静时的中心，不代表声音很大</a></li>
+<li><a href="#8000-128">每个通道每秒 8000 点，主循环一次处理 128 点音频</a></li>
+<li><a href="#_2">超过门限还不够，还要先安静一下</a></li>
+</ul>
+</li>
+<li><a href="#5">5. 游戏其实是四种情况，加上一点移动</a><ul>
+<li><a href="#_3">小鸟为什么会落下，负数为什么能让它上跳</a></li>
+<li><a href="#bad-f">本批按键为什么显示 BAD F</a></li>
+</ul>
+</li>
+<li><a href="#6">6. 屏幕和串口怎样提供反馈</a><ul>
+<li><a href="#oled">先画在数组里，再分小段发给 OLED</a></li>
+<li><a href="#_4">把串口当作程序的观察窗口</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 改一个地方，观察一个结果</a><ul>
+<li><a href="#_5">修改后的检查顺序</a></li>
+</ul>
+</li>
+<li><a href="#8">8. 推荐的五次学习实验</a><ul>
+<li><a href="#_6">第一次：点灯，认识输出和时间</a></li>
+<li><a href="#_7">第二次：串口，认识输入和反馈</a></li>
+<li><a href="#_8">第三次：电位器，认识模拟量</a></li>
+<li><a href="#_9">第四次：麦克风，认识“一段数据”和事件</a></li>
+<li><a href="#_10">第五次：游戏，认识结构体和状态</a></li>
+</ul>
+</li>
+<li><a href="#9">9. 调音器是选学，放到最后</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="c">从会写 C 到看懂声控小鸟</h1>
+<p>这份指南从 <code>main()</code> 出发，带你找到每个功能在哪里、数据怎样流动，以及修改一个参数后应该观察什么。第一遍不需要看懂所有硬件配置，也不需要先学调音算法。</p>
+<p>接线、下载软件和烧录步骤见 <a href="../README.html">README</a>。当前已完成慢速GPIO亮屏诊断，可以直接运行游戏版<code>flappy_f103</code>；<code>board_selftest</code>保留供排查采样等问题。本文描述的是程序应有的行为；电脑上的编译和测试不能代替实物验证。</p>
+<h2 id="1">1. 先找到入口，再按需要找文件</h2>
+<p>从 <a href="../src/main.c">src/main.c</a> 开始。它只做两件事：上电初始化一次，然后反复处理七项任务。</p>
+<table>
+<thead>
+<tr>
+<th>想知道什么</th>
+<th>打开哪个文件</th>
+<th>先找哪个位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>程序整体怎样运行</td>
+<td><a href="../src/main.c">src/main.c</a></td>
+<td><code>main()</code>，从上往下读</td>
+</tr>
+<tr>
+<td>想改速度、门限、刷新时间</td>
+<td><a href="../include/app_config.h">include/app_config.h</a></td>
+<td>对应的中文注释和 <code>APP_...</code> 参数</td>
+</tr>
+<tr>
+<td>声音、命令和界面怎样联系起来</td>
+<td><a href="../src/app.c">src/app.c</a></td>
+<td><code>app_init()</code>，再查七个任务函数</td>
+</tr>
+<tr>
+<td>吹气怎样变成上跳、怎样判断碰撞</td>
+<td><a href="../src/core.c">src/core.c</a></td>
+<td><code>audio_gate_update()</code>、<code>game_flap()</code>、<code>game_step()</code></td>
+</tr>
+<tr>
+<td>游戏变量分别是什么意思</td>
+<td><a href="../include/core.h">include/core.h</a></td>
+<td><code>AudioStats</code>、<code>AudioGate</code>、<code>Game</code></td>
+</tr>
+<tr>
+<td>怎样点灯、取采样、收发串口</td>
+<td><a href="../include/board.h">include/board.h</a></td>
+<td>先看接口和注释，再去 <a href="../src/board.c">src/board.c</a> 找实现</td>
+</tr>
+<tr>
+<td>文字和小鸟怎样画出来</td>
+<td><a href="../src/app.c">src/app.c</a>、<a href="../src/display.c">src/display.c</a></td>
+<td><code>draw_game()</code>、<code>display_text()</code>、<code>display_poll()</code></td>
+</tr>
+<tr>
+<td>串口文字怎样变成命令</td>
+<td><a href="../src/command.c">src/command.c</a></td>
+<td><code>command_parse()</code>；执行动作在 <code>app.c</code> 的 <code>handle_command()</code></td>
+</tr>
+<tr>
+<td>吉他音高怎样计算，选学</td>
+<td><a href="../src/pitch.c">src/pitch.c</a>、<a href="../include/pitch.h">include/pitch.h</a></td>
+<td><code>pitch_begin()</code>、<code>pitch_step()</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>.h</code> 文件可以看成模块的使用说明：有哪些函数、需要哪些数据。<code>.c</code> 文件是具体做法。读到 <code>board_led(true)</code> 时，先知道它会点亮状态灯，就可以继续读主流程。</p>
+<p>几个会反复遇到的 C 写法：</p>
+<ul>
+<li><code>bool</code> 只表示是或否，值是 <code>true</code>、<code>false</code>。</li>
+<li><code>uint16_t</code>、<code>uint32_t</code> 是不存负数的整数；ADC 读数和毫秒计时分别使用它们。</li>
+<li><code>20U</code> 中的 <code>U</code> 表示无符号整数；<code>0.11f</code> 中的 <code>f</code> 表示 <code>float</code> 小数。</li>
+<li><code>Game</code> 是把一局游戏的数据放在一起的结构体；<code>game-&gt;bird_y</code> 表示通过指针读取其中的小鸟高度。</li>
+<li><code>app.c</code> 文件开头的 <code>static</code> 变量由本文件保存，下一轮主循环还能继续使用，不会每轮重新清零。</li>
+</ul>
+<h2 id="2">2. 上电后发生什么</h2>
+<p><code>app_init()</code> 先调用 <code>board_init()</code> 配置硬件，再准备游戏、按键、声音检测和显示，最后发送启动日志并开始安静标定。</p>
+<table>
+<thead>
+<tr>
+<th>大致阶段</th>
+<th>程序正在做什么</th>
+<th>实物上可以观察什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>初始化</td>
+<td>配置时钟、GPIO、串口、SPI、定时器、ADC 和 DMA</td>
+<td>串口出现 <code>HELLO MCU</code> 和状态数据</td>
+</tr>
+<tr>
+<td>前约 200 ms</td>
+<td>等待麦克风电路稳定，暂不统计背景音量</td>
+<td>此时不要急着吹气</td>
+</tr>
+<tr>
+<td>随后约 1 s</td>
+<td>根据背景音量计算声音门限</td>
+<td>保持安静，等待 <code>CAL DONE</code></td>
+</tr>
+<tr>
+<td>同时进行</td>
+<td>分步骤复位、清屏和开启OLED；实际等待与SPI传输速度有关</td>
+<td>自检版显示自检页，游戏版显示准备页</td>
+</tr>
+<tr>
+<td>持续运行</td>
+<td>七项任务不断轮流执行</td>
+<td>串口可查询，采样持续，游戏按自己的节奏更新</td>
+</tr>
+</tbody>
+</table>
+<p>这些时间不是串起来等完才接着工作。OLED 还在等待复位时，串口和采样任务已经可以继续运行。标定完成依赖收到音频块；没有采样时不能仅凭等够时间就认定成功。</p>
+<p>两种固件使用同一套功能。自检版默认进入 <code>DIAG</code>，用内部时钟工作在 64 MHz；游戏版默认进入游戏界面，优先使用外部晶振达到 72 MHz，外部时钟启动失败时回退到内部时钟。具体采用哪一种，以 <code>status</code> 中的 <code>CLK</code> 为准。</p>
+<h3 id="_1">主循环负责决定，中断负责及时记下事情</h3>
+<p><code>main.c</code> 中七项任务的顺序如下：</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>每轮检查什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>app_process_audio(now)</code></td>
+<td>有新音频块吗？该关闭蜂鸣器了吗？这次声音需要上跳吗？</td>
+</tr>
+<tr>
+<td><code>app_process_commands(now)</code></td>
+<td>收到串口字符了吗？是否已经凑齐一行命令？</td>
+</tr>
+<tr>
+<td><code>app_process_keys(now)</code></td>
+<td>哪个按键已稳定按下？</td>
+</tr>
+<tr>
+<td><code>app_update_game(now)</code></td>
+<td>距离上一步是否已到 20 ms？</td>
+</tr>
+<tr>
+<td><code>app_update_tuner(now)</code></td>
+<td>调音模式是否还有少量计算要继续？</td>
+</tr>
+<tr>
+<td><code>app_update_display(now)</code></td>
+<td>推进初始化或发最多8字节像素，必要时画下一帧</td>
+</tr>
+<tr>
+<td><code>app_update_status(now)</code></td>
+<td>更新状态灯，必要时发送每秒一次的状态报告</td>
+</tr>
+</tbody>
+</table>
+<p>没有新数据、没有到时间，函数就返回，让下一项继续。这是普通 C 函数依次执行，不是七个函数同时运行。</p>
+<p>中断是硬件发来的及时通知。CPU 暂时记下事情，然后回到原来执行的位置：</p>
+<pre><code class="language-text">TIM4 每 1 ms 中断 ──→ 毫秒数加 1 ───────────→ 主循环检查时间
+DMA 完成半块数据 ──→ 记录哪半块已完成 ─────→ 主循环取数据、算音量
+UART 收到一个字符 ─→ 字符放进接收队列 ────→ 主循环拼命令、执行动作
+</code></pre>
+<p>游戏碰撞判断、格式化状态文字和调音计算都放在主循环里。中断里不等用户输入，也不整屏绘图。七项任务检查完后，主循环立即从第一项重新检查；计时和采样硬件按各自的节奏持续工作。</p>
+<h2 id="3-delay">3. 为什么看时间差，而不是到处写 delay</h2>
+<p>假设蜂鸣器需要响 60 ms。在主循环里调用 <code>HAL_Delay(60)</code>，会让其他任务这段时间得不到处理；即使硬件仍在采样，主循环也可能错过数据块。</p>
+<p>本项目采用“记下开始时间，下次经过时再检查”的办法。以下是 <a href="../src/app.c">src/app.c</a> 中关闭蜂鸣器的实际逻辑：</p>
+<pre><code class="language-c">if (beep_active &amp;&amp; now - beep_started &gt;= APP_BEEP_DURATION_MS) {
+    board_buzzer(0U);
+    beep_active = false;
+}
+</code></pre>
+<p>例如在第 1000 ms 开始响，第 1020 ms 经过这里，时间差只有 20 ms，继续做别的事；第 1060 ms 再经过，时间差达到 60 ms，关闭蜂鸣器。</p>
+<p>游戏同样看时间差，每20ms前进一步，所以逻辑目标是每秒更新50次。屏幕每40ms尝试提交下一帧，但必须等上一张画传完，因此实际帧率还受传输速度和变化区域大小影响。<strong>主循环、游戏步进和画面刷新有各自的节奏。</strong> 改显示间隔不会直接改变游戏速度。</p>
+<p>计时变量用 <code>uint32_t</code>，约 49.7 天后会从最大值回到 0。保持使用 <code>now - started</code> 比较短时间间隔，计数跨过 0 时仍能计算正确；不要改成比较 <code>now &gt;= started + duration</code>。</p>
+<h2 id="4">4. 麦克风读数怎样变成一次上跳</h2>
+<h3 id="2048">2048 附近是安静时的中心，不代表声音很大</h3>
+<p>ADC 把电压转换为 0～4095 的整数。麦克风波形既要向上变化，也要向下变化，因此模拟电路把它放在约一半电源电压附近。VDDA 约为 3.3 V 时，这个中心常在约 1.65 V，对应约 2048。</p>
+<p>这个中心叫直流偏置。实际板子的中心可能稍有偏移，所以程序每块都先求平均值，再看采样值相对平均值的变化，而不是固定减去 2048。</p>
+<p>例如一小段采样是：</p>
+<pre><code class="language-text">ADC 原值：  1948   2148   1948   2148
+平均值：                   2048
+去掉平均：  -100   +100   -100   +100
+RMS 音量：                  100
+</code></pre>
+<p>RMS 的算法是“偏差平方，求平均，再开平方”。负的偏差平方后也会贡献音量，因此波形正负摆动不会互相抵消。完全不变的 <code>2048、2048、2048、2048</code> 算出的 RMS 则是 0。</p>
+<p>可以在 <a href="../src/core.c">src/core.c</a> 的 <code>audio_stats_compute()</code> 对照这三行，理解式子即可，不用另行粘贴：</p>
+<pre><code class="language-c">float deviation = (float)adc_sample(samples[index]) - average;
+squared_sum += deviation * deviation;
+stats-&gt;rms = (uint16_t)sqrtf(squared_sum / (float)count);
+</code></pre>
+<p>第一、二行对每个采样执行，第三行在累加结束后执行。这里直接使用普通 <code>float</code> 运算。<code>RMS</code> 是 ADC 计数单位下的声音大小，不是分贝；<code>PEAK</code> 是最大的瞬时偏差；<code>CLIP</code> 是本块中接近 ADC 上下限的样本数量。经常接近 0 或 4095，可能说明输入被削平，需要检查声音大小和模拟前端。</p>
+<h3 id="8000-128">每个通道每秒 8000 点，主循环一次处理 128 点音频</h3>
+<p>麦克风接 PA0，电位器接 PA1。TIM3 每 125 微秒触发一次 ADC 扫描，每次依次测这两个通道。因此是<strong>音频每秒 8000 点，电位器也每秒 8000 点</strong>。</p>
+<p>DMA 可以理解为自动把 ADC 结果搬进数组的硬件。内存顺序是：</p>
+<pre><code class="language-text">音频0，电位器0，音频1，电位器1，音频2，电位器2，……
+</code></pre>
+<p>循环缓冲分成前后两半。每半有 128 组结果，也就是 128 个音频值和 128 个电位器值，需要 16 ms 填满。DMA 写后半区时，主循环可以取已经写好的前半区；写到末尾后，DMA 再从头开始。</p>
+<p>应用层通过 <code>board_audio_read()</code> 取得一个完整音频块，同时得到这一块的电位器平均值。它返回 <code>false</code> 时表示本轮没有可用的新块，上层立即返回，不拿旧数据冒充新采样。</p>
+<p>若主循环处理太慢，<code>LOST</code> 会增加。程序丢弃调音的半帧数据并重新等待安静，避免把中间缺了一段的声音当成连续声音。初学时保留现有采样率和缓冲大小，先改玩法参数更容易观察效果。</p>
+<h3 id="_2">超过门限还不够，还要先安静一下</h3>
+<p><code>threshold</code> 是声音触发门限。以门限 100 为例，<code>audio_gate_update()</code> 的规则是：</p>
+<ol>
+<li>音量先降到 75 或以下，并连续安静至少 50 ms，才准备接受下一次响声。</li>
+<li>RMS 达到 100 或更高，并且与上一次有效触发至少相隔 180 ms，发出一次事件。</li>
+<li>发出事件后，要重新经过安静阶段。持续吹气不会无限连跳。</li>
+</ol>
+<p>实际音量每 16 ms 更新一次，因此不会恰好在第 50 ms 判定，而是在收到满足条件的下一块时判定。上下使用不同门限，也能减少音量在门槛附近波动造成的重复动作。</p>
+<p>收到事件后，<code>app.c</code> 调用 <code>game_flap(&amp;game)</code>。声音算法负责判断“有没有新响声”，游戏算法负责判断“现在是否可以上跳”。</p>
+<p>上电标定先统计背景 RMS，使用“平均背景音量 × 3 + 30”作为门限基础，再限制到默认最小 70、最大 2000。比如平均背景 RMS 为 20，计算门限约为 90。<code>APP_DEFAULT_SOUND_THRESHOLD</code> 的 100 是起始值，正常标定结束后会被新结果覆盖。</p>
+<p>需要试灵敏度时，先在准备界面发送 <code>threshold 150</code>，再短吹一次。该命令立即采用手动门限，并关闭电位器控制、结束正在进行的标定。需要重新自动标定时发送 <code>pot off</code>、<code>cal</code>，保持安静等 <code>CAL DONE</code>；标定期间声控被抑制，建议先用 <code>menu</code> 回到准备界面。</p>
+<h2 id="5">5. 游戏其实是四种情况，加上一点移动</h2>
+<p><a href="../include/core.h">include/core.h</a> 的 <code>GameState</code> 保存当前状态。所谓状态机，就是根据“现在是哪种情况”和“收到什么输入”决定下一步。</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>程序做什么</th>
+<th>怎样离开</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GAME_READY</code>，准备</td>
+<td>显示标题，等待开始</td>
+<td>有效声音、SW1 或 <code>flap</code> 开局并上跳；<code>play</code> 直接开新局</td>
+</tr>
+<tr>
+<td><code>GAME_PLAYING</code>，运行</td>
+<td>移动小鸟和管道，判断碰撞与计分</td>
+<td><code>pause</code> 暂停；碰撞进入结束；<code>menu</code> 回到准备</td>
+</tr>
+<tr>
+<td><code>GAME_PAUSED</code>，暂停</td>
+<td>保存坐标和速度，不移动</td>
+<td><code>resume</code> 或修好的 SW2 继续；<code>menu</code> 回到准备</td>
+</tr>
+<tr>
+<td><code>GAME_OVER</code>，结束</td>
+<td>显示结束画面</td>
+<td>有效声音、SW1 或 <code>flap</code> 重开并上跳；<code>play</code> 直接开新局</td>
+</tr>
+</tbody>
+</table>
+<p><code>play</code> 总是新开一局，不是继续暂停的游戏。暂停期间吹气或发 <code>flap</code> 不会移动小鸟。最高分在重开和回菜单时保留，断电或复位后清零。</p>
+<p><code>VIEW_GAME</code>、<code>VIEW_DIAGNOSTIC</code>、<code>VIEW_TUNER</code> 是“当前看哪个界面”；上面的四态是“游戏进行到哪一步”。进入 <code>diag</code> 或 <code>tuner</code> 会清理当前一局，之后回 <code>menu</code> 是准备画面；想保留这一局，应使用 <code>pause</code>。</p>
+<h3 id="_3">小鸟为什么会落下，负数为什么能让它上跳</h3>
+<p>屏幕左上角是 <code>(0, 0)</code>，向右是横坐标增大，向下是纵坐标增大。因此竖直速度为正表示向下，为负表示向上。</p>
+<p><code>game_step()</code> 每 20 ms 做一次类似下面的计算；实际代码还有限速和碰撞检查：</p>
+<pre><code class="language-c">game-&gt;bird_velocity += APP_BIRD_GRAVITY;
+game-&gt;bird_y += game-&gt;bird_velocity;
+</code></pre>
+<p>速度初始为 0；默认重力为 <code>0.11f</code>，下一步速度变成 0.11，再下一步变成 0.22，小鸟逐渐向下。吹气时 <code>game_flap()</code> 将速度设成 <code>-1.80f</code>，小鸟先向上，随后重力让速度逐渐回到正数。</p>
+<p><code>bird_y</code>、<code>bird_velocity</code> 和管道的 <code>x</code> 都是普通 <code>float</code>，分别表示像素位置和每步移动量。绘图时才转成整数像素，不需要先学习特殊的数字缩放。</p>
+<p>管道每步向左移动默认 1 像素；整根越过小鸟后加一分，移出屏幕后移到右侧继续使用。想调难度，先改管道速度或开口大小，暂时保留每步 20 ms；直接改步进间隔会同时改变所有按“每步”定义的运动速度。</p>
+<h3 id="bad-f">本批按键为什么显示 BAD F</h3>
+<p>SW1～SW4 当前存在实际接地故障，SW5 已拆除以恢复 SWD。软件不会把接地当作连续按键操作，而是要求一个键先稳定松开至少 20 ms，之后才允许产生按下事件。</p>
+<p><code>BLOCKED=F</code> 或屏上的 <code>BAD F</code> 表示四个键都还没通过“先松开”检查。十六进制 <code>F</code> 就是四个二进制位全为 1；它不是死机提示。</p>
+<p>修好后，SW1 负责上跳或返回游戏，SW2 暂停/继续，SW3 切换界面，SW4 标定。GPIO 始终作为上拉输入读取；软件不能解除硬件短路，当前学习流程使用串口和声音即可，按键输入验收仍需返修后进行。</p>
+<h2 id="6">6. 屏幕和串口怎样提供反馈</h2>
+<h3 id="oled">先画在数组里，再分小段发给 OLED</h3>
+<p>OLED 是 128×64 黑白屏，一个像素只需保存亮或灭。<code>display.c</code> 用 1024 字节数组保存整幅画，<code>draw_game()</code> 等函数只是修改这个数组。</p>
+<p>屏幕分成8页，每页高8像素、宽128像素。正式版采用实物已能显示的GPIO模拟SPI方式：一位一位改变DIN与CLK电平，具体代码见<code>src/oled_gpio_spi.c</code>。GPIO等待次数越多，发送越慢；正常版24次等待已由用户确认可用，兼容版保留192次。</p>
+<p><code>display_present()</code>提交一帧后，<code>display_poll()</code>每轮最多发送8字节像素，完成后立刻让其他任务继续。初始化命令也分成小段，避免启动时阻塞。这里没有引入线程或复杂调度，只是把“发整页”改成“这轮发一点，下轮再接着发”。</p>
+<p>程序还用<code>sent_framebuffer</code>额外保存一份已发画面，每8字节与新画面对比：相同就跳过，不同才发送。这会多使用1024字节RAM，目的是用容易理解的数组比较减少重复传输，而非节省内存。发送失败不更新这份记录，复位后必须完整重发。整张画发完前，仍不允许应用层修改这张画。</p>
+<p>想做第一个界面修改，可以在 <a href="../src/app.c">src/app.c</a> 的 <code>draw_game()</code> 中，把准备画面的这一行标题改成：</p>
+<pre><code class="language-c">display_text(28, 15, &quot;HELLO&quot;, 2U);
+</code></pre>
+<p>重新编译并烧录后，发送 <code>menu</code>，原来的 <code>FLAPPY</code> 应变成 <code>HELLO</code>。四个参数依次是横坐标、纵坐标、文字、放大倍数。</p>
+<p>当前字库包含英文字母、数字和常用符号，不包含汉字；代码里的中文注释不会影响屏幕字体。普通大小每个字符占 6 像素横向步距，放大两倍后占 12 像素。文字不会自动折行，超出右侧会被裁掉，从最左侧开始的普通大小文字尽量控制在 21 字符以内。</p>
+<p>屏幕接口只发送，不回读确认。<code>SPI_ERR=0</code> 说明驱动没有报告发送失败，不能证明接线正确或实屏已经点亮。</p>
+<h3 id="_4">把串口当作程序的观察窗口</h3>
+<p>使用 3.3 V 逻辑 USB 转串口模块，TX/RX 交叉连接并共地；主板 Type-C 只供电。接线按 <a href="../README.html">README</a> 核对。电脑终端设置 115200、8 数据位、无校验、1 停止位、无流控，每条命令最后发送换行。</p>
+<p>先逐条发送下面三行，每行都按发送或回车：</p>
+<pre><code class="language-text">help
+diag
+stream on
+</code></pre>
+<p>应看到命令说明、自检模式，以及每秒一次的状态输出。发送 <code>stream off</code> 可以停止周期输出；<code>status</code> 随时手动查询一次。</p>
+<table>
+<thead>
+<tr>
+<th>状态字段</th>
+<th>怎样理解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STATE</code>、<code>CLK</code></td>
+<td>当前模式/游戏状态，以及实际时钟来源和频率</td>
+</tr>
+<tr>
+<td><code>ADC</code>、<code>RMS</code>、<code>PEAK</code>、<code>CLIP</code></td>
+<td>音频平均值、有效音量、峰值偏差、接近上下限的样本数</td>
+</tr>
+<tr>
+<td><code>POT</code>、<code>VDDA</code></td>
+<td>电位器原始值及换算电压、采用的参考电压</td>
+</tr>
+<tr>
+<td><code>TH</code></td>
+<td>当前真正使用的声音门限，以它判断标定或旋钮是否改变了设置</td>
+</tr>
+<tr>
+<td><code>BLOCKS</code>、<code>LOST</code></td>
+<td>已采集的块数、未及时取走而跳过的块数；正常采样时前者持续增加</td>
+</tr>
+<tr>
+<td><code>RX_LOST</code>、<code>TX_LOST</code></td>
+<td>接收出错/丢字次数、因发送队列空间不足而拒绝消息的次数</td>
+</tr>
+<tr>
+<td><code>BLOCKED</code>、<code>FAULT</code></td>
+<td>哪些按键未释放，以及硬件错误标志；故障位含义见 <code>board.h</code></td>
+</tr>
+<tr>
+<td><code>FREQ_mHz</code>、<code>VALID</code></td>
+<td>调音频率乘 1000 和有效标志；<code>VALID=0</code> 时不要使用残留的频率数字</td>
+</tr>
+</tbody>
+</table>
+<p>最常用的操作集中在下面：</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>结果或注意点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>menu</code>、<code>play</code>、<code>flap</code></td>
+<td>回准备、开新局、上跳</td>
+</tr>
+<tr>
+<td><code>pause</code>、<code>resume</code></td>
+<td>暂停、继续当前一局</td>
+</tr>
+<tr>
+<td><code>diag</code>、<code>tuner</code></td>
+<td>看原始数据、进入选学调音功能</td>
+</tr>
+<tr>
+<td><code>cal</code></td>
+<td>重新采集背景音量，约 1.2 秒保持安静</td>
+</tr>
+<tr>
+<td><code>threshold 150</code></td>
+<td>手动设门限，允许 1～4095；同时关闭旋钮控制和当前标定</td>
+</tr>
+<tr>
+<td><code>pot on</code>、<code>pot off</code></td>
+<td>让旋钮控制门限、停止旋钮控制；关闭后保留最后的门限</td>
+</tr>
+<tr>
+<td><code>vdda 3295</code></td>
+<td>将参考电压设为实测值，单位 mV，允许 2000～3600</td>
+</tr>
+<tr>
+<td><code>beep</code></td>
+<td>默认约 4 kHz、60 ms 的短音；调音模式拒绝此命令</td>
+</tr>
+<tr>
+<td><code>mute on</code>、<code>mute off</code></td>
+<td>关闭、开启游戏蜂鸣器音效，<strong>不会关闭麦克风声控</strong></td>
+</tr>
+<tr>
+<td><code>help</code>、<code>status</code>、<code>stream on/off</code></td>
+<td>看帮助、查一次状态、开关每秒状态输出</td>
+</tr>
+</tbody>
+</table>
+<p>命令不区分大小写。主循环收到一整行后才解析；非法参数、超长输入不会截短后执行。串口丢字时，程序清空尚未处理的接收数据并等待新换行：先发送一个空行，再重发完整命令。</p>
+<p>蜂鸣器声音也会被麦克风听到。v1.0.0默认开启得分与碰撞音效，同时保留防自触发：短音响60ms，但从短音开始计算，共屏蔽声音触发300ms，之后还要重新等待安静。屏蔽期间仍然采样，只是不把音量变成上跳事件。<code>mute on</code>关闭自动游戏音效，<code>mute off</code>重新开启；调音模式禁止鸣叫。</p>
+<h2 id="7">7. 改一个地方，观察一个结果</h2>
+<p>常用参数都在 <a href="../include/app_config.h">include/app_config.h</a>。先用串口试出合适范围，再改源码默认值；每次只改一项，记下原值，重新编译、烧录并对比。</p>
+<table>
+<thead>
+<tr>
+<th>想做的实验</th>
+<th>可编辑位置或命令</th>
+<th>可以怎样试</th>
+<th>预期现象</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>吹气更容易触发</td>
+<td><code>threshold</code> 命令</td>
+<td><code>threshold 150</code> 改为 <code>threshold 100</code></td>
+<td>较小音量也能触发，但环境噪声可能更容易误触发</td>
+</tr>
+<tr>
+<td>提高自动标定的最低门限</td>
+<td><code>APP_AUTO_THRESHOLD_MIN</code></td>
+<td>70 改为 100</td>
+<td>安静环境下标定后的 <code>TH</code> 至少为 100；噪声较大时可能更高</td>
+</tr>
+<tr>
+<td>减少过密上跳</td>
+<td><code>APP_SOUND_COOLDOWN_MS</code></td>
+<td>180 改为 250</td>
+<td>两次有效触发需要间隔更久</td>
+</tr>
+<tr>
+<td>管道慢一点</td>
+<td><code>APP_PIPE_SPEED</code></td>
+<td><code>1.0f</code> 改为 <code>0.7f</code></td>
+<td>管道向左移动更慢</td>
+</tr>
+<tr>
+<td>开口宽松一点</td>
+<td><code>APP_PIPE_GAP</code></td>
+<td>26 改为 32</td>
+<td>上下管道之间的空隙变大；这里允许 7～42 像素</td>
+</tr>
+<tr>
+<td>两组管道隔远一点</td>
+<td><code>APP_PIPE_SPACING</code></td>
+<td>64 改为 80</td>
+<td>连续两组管道之间有更多操作时间</td>
+</tr>
+<tr>
+<td>上跳力度更大</td>
+<td><code>APP_BIRD_FLAP_SPEED</code></td>
+<td><code>-1.80f</code> 改为 <code>-2.00f</code></td>
+<td>一次上跳更明显，也更容易碰顶部</td>
+</tr>
+<tr>
+<td>下落加速慢一点</td>
+<td><code>APP_BIRD_GRAVITY</code></td>
+<td><code>0.11f</code> 改为 <code>0.08f</code></td>
+<td>速度转为向下更慢，小鸟更“飘”</td>
+</tr>
+<tr>
+<td>看懂刷新与运动的区别</td>
+<td><code>APP_DISPLAY_INTERVAL_MS</code></td>
+<td>40 改为 80</td>
+<td>画面更新变疏，游戏物理仍每 20 ms 前进一步</td>
+</tr>
+<tr>
+<td>看清状态灯节奏</td>
+<td><code>app.c</code> 的 <code>app_update_status()</code> 正常分支</td>
+<td><code>now % 1000U &lt; 100U</code> 改为 <code>now % 500U &lt; 100U</code></td>
+<td>无故障时每半秒亮 100 ms</td>
+</tr>
+</tbody>
+</table>
+<p>开口和管道间距有编译期检查，超出合理范围会报错。看到这类错误，先回到参数检查数值，不要删除检查语句。</p>
+<p>需要注意三个不同的“保存”：</p>
+<ul>
+<li>改 <code>app_config.h</code> 并重新编译烧录：改变下一次上电采用的默认设置。</li>
+<li>发 <code>threshold</code>、<code>pot</code>、<code>vdda</code>、<code>mute</code> 等命令：只改变本次运行的 RAM，复位或断电后恢复默认。</li>
+<li>自动标定和旋钮控制：运行时会再改变当前门限；因此修改起始门限后，还要通过 <code>status</code> 的 <code>TH</code> 看最终生效值。</li>
+</ul>
+<p>旋钮默认不控制门限。发送 <code>pot on</code> 后，PA1 的 0～4095 大致映射为门限 40～640；门限越大，需要的声音越大。做自动标定实验时先 <code>pot off</code>，否则标定完成后旋钮会继续接管门限。</p>
+<h3 id="_5">修改后的检查顺序</h3>
+<p>在项目根目录、已安装 PlatformIO 和本机 GCC 的环境下执行：</p>
+<pre><code class="language-sh">pio run -e flappy_f103 -e board_selftest
+python3 tools/run_tests.py
+</code></pre>
+<p>第一条为单片机构建两个版本，不会自动烧录；第二条在电脑上运行算法、命令、应用和显示测试。构建结果在 <code>.pio/build/对应版本/</code> 下，<code>firmware.bin</code> 是烧录文件之一，使用 BIN 时起始地址为 <code>0x08000000</code>。</p>
+<p>需要发布用 HEX 时，构建两个版本后执行 <code>python3 tools/package_release.py</code>，它会生成包含 HEX 的发布包并检查文件一致性。实际下载仍按 README 操作，烧录前核对文件版本和修改时间，避免改完代码却继续下载旧文件。</p>
+<p>这些命令通过后，再通过实物观察验证本次修改。若有测试失败，先看失败用例是否与本次参数有关，不要为了显示“通过”直接删断言。</p>
+<h2 id="8">8. 推荐的五次学习实验</h2>
+<h3 id="_6">第一次：点灯，认识输出和时间</h3>
+<p>先看 D1 与 D2：D1 是电源灯，软件控制的是 PC13 上的 D2。找到 <code>board_led()</code>，知道 <code>true</code> 表示亮即可，底层已经处理了低电平点亮的接法。</p>
+<p>只修改上一节的状态灯正常闪烁间隔，观察 D2 是否从每秒短亮改为每半秒短亮。<code>app_update_status()</code> 每轮都会控制它，所以不要同时在 <code>main()</code> 里再写一个相互覆盖的点灯逻辑。若灯快闪，先通过串口检查 <code>FAULT</code> 和 ADC 是否更新。</p>
+<h3 id="_7">第二次：串口，认识输入和反馈</h3>
+<p>发送 <code>help</code>、<code>status</code>，再开关 <code>stream</code>，确认命令和输出都能走通。沿着 <code>board_uart_read()</code> → <code>app_process_commands()</code> → <code>command_parse()</code> → <code>handle_command()</code> 读一次流程。</p>
+<p>试着发送 <code>threshold abc</code>，应该收到错误提示，门限不会变成错误的数值。再发合法命令并查 <code>status</code>，体会“解析文字”和“执行动作”为什么分开。</p>
+<h3 id="_8">第三次：电位器，认识模拟量</h3>
+<p>保持 <code>pot off</code>，在 <code>diag</code> 或状态输出中缓慢转动旋钮。先只看 <code>POT</code> 原始值是否随转动变化，再看电压换算：</p>
+<pre><code class="language-text">电压 mV ≈ 原始值 × VDDA_mV ÷ 4095
+例如原始值 2048、VDDA 3300 mV，结果约 1650 mV。
+</code></pre>
+<p>默认 3300 mV 是名义值。要核查电压精度，测量实际 VDDA 并用 <code>vdda</code> 命令设置，再与仪表对比；NRST 引脚电压不是 ADC 参考电压。换算式正确不等于整板已经达到小于 5% 的实测误差。</p>
+<h3 id="_9">第四次：麦克风，认识“一段数据”和事件</h3>
+<p>先回 <code>menu</code>，发送 <code>pot off</code>、<code>cal</code>，安静等待 <code>CAL DONE</code>。然后进入 <code>diag</code>，比较安静、短吹气、持续吹气时的 <code>ADC</code>、<code>RMS</code>、<code>PEAK</code>。</p>
+<p>回到 <code>menu</code> 后短吹一次，应从准备画面开局并上跳；持续吹气不应一直产生新上跳。需要重复触发时，给出足够安静间隔。这个实验对应 <code>audio_stats_compute()</code> 和 <code>audio_gate_update()</code>，先掌握它们即可。</p>
+<h3 id="_10">第五次：游戏，认识结构体和状态</h3>
+<p>用 <code>play</code>、<code>flap</code>、<code>pause</code>、<code>resume</code>、<code>menu</code> 逐项观察状态。暂停后等几秒再继续，原来的小鸟位置和速度应保留；结束后重开，本局分数清零，最高分保留到本次通电结束。</p>
+<p>把 <code>APP_PIPE_SPEED</code> 改为 <code>0.7f</code>，重新构建并烧录，再比较通过第一根管道需要的时间。能解释“参数 → 每步位移 → 屏幕现象”之后，再阅读碰撞判断和计分逻辑。</p>
+<h2 id="9">9. 调音器是选学，放到最后</h2>
+<p>前面五次实验不依赖你看懂 <code>pitch.c</code>。愿意继续时，可以把调音理解为：<strong>找出波形多久重复一次，再算一秒重复多少次。</strong></p>
+<p>每个音频块有 128 点，累积 8 块得到 1024 点，也就是约 128 ms 的声音。算法比较原波形与延后若干采样点的波形，寻找可靠的相似位置。比如一个周期约 73 点，在每秒 8000 点的采样率下，频率约为 <code>8000 / 73 ≈ 109.6 Hz</code>，接近 A2 的 110 Hz。</p>
+<p><code>pitch_begin()</code> 接收一帧并检查声音是否太弱或削顶；<code>pitch_step()</code> 每次比较少量候选周期，后面几轮继续完成。算法中的相似度、插值和音分直接用 <code>float</code> 表达。音分公式在代码里就是：</p>
+<pre><code class="language-c">return 1200.0f * log2f(frequency_hz / reference_hz);
+</code></pre>
+<p>测得频率等于标准频率时，音分为 0；高一点是正数，低一点是负数。六弦标准音依次为 E2、A2、D3、G3、B3、E4，检测范围为 65～400 Hz，适合一次拨一根弦。</p>
+<p>先发送 <code>tuner</code>，等待进入，再拨弦观察。静音、削顶、噪声太大或采样断开时，程序应显示等待或无效结果，而不继续把旧频率当作当前结论。实际精度仍取决于采样时钟、输入电路、音源和环境，需要上板验证。</p>
+<p>读到这里，回到 <code>main.c</code>：七项任务各自的数据从哪里来、什么时候处理、结果交给谁，应该已经能逐项对上。下一次想改功能，就从对应任务和 <code>app_config.h</code> 开始。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

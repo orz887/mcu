@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="530" viewBox="0 0 1120 530" role="img" aria-labelledby="title desc">
+<title id="title">声控小鸟从声音到画面的功能链路</title><desc id="desc">USB供电。麦克风经放大送ADC和DMA，程序计算音量、判断声音触发，更新游戏，GPIO模拟SPI输出到OLED。得分碰撞触发蜂鸣器，声控暂时屏蔽防止反馈。串口和修复后的按键提供控制。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#276f63"/></marker></defs>
+<rect width="1120" height="530" rx="12" fill="#f0f5f1"/>
+<g font-family="Microsoft YaHei,Noto Sans CJK SC,sans-serif" fill="#203d37" text-anchor="middle">
+<text x="560" y="42" font-size="23" font-weight="700">从一次吹气，到小鸟上跳</text>
+<rect x="20" y="64" width="1080" height="56" rx="7" fill="#e0eae2"/><text x="560" y="99" font-size="18">供电：USB 5V → AP2114稳压 → 3.3V → 主控、麦克风电路和屏幕模块</text>
+<g fill="white" stroke="#87ab9d" stroke-width="1.5"><rect x="20" y="170" width="155" height="108" rx="8"/><rect x="205" y="170" width="155" height="108" rx="8"/><rect x="390" y="170" width="155" height="108" rx="8"/><rect x="575" y="170" width="155" height="108" rx="8"/><rect x="760" y="170" width="155" height="108" rx="8"/><rect x="945" y="170" width="155" height="108" rx="8"/></g>
+<g font-size="19" font-weight="700"><text x="97" y="207">麦克风</text><text x="282" y="207">模拟放大</text><text x="467" y="207">ADC + DMA</text><text x="652" y="207">音量与声音门</text><text x="837" y="207">游戏状态机</text><text x="1022" y="207">OLED画面</text></g>
+<g font-size="14"><text x="97" y="238">空气振动变电信号</text><text x="97" y="259">MK1</text><text x="282" y="238">调整信号大小与偏置</text><text x="282" y="259">LMV358</text><text x="467" y="238">电压变数字，搬进RAM</text><text x="467" y="259">PA0 / 定时采样</text><text x="652" y="238">RMS、门限、安静间隔</text><text x="652" y="259">一次短吹 → 一次事件</text><text x="837" y="238">上跳、重力、碰撞、分数</text><text x="837" y="259">每20ms更新逻辑</text><text x="1022" y="238">画入数组，再分块发送</text><text x="1022" y="259">GPIO模拟SPI</text></g>
+<g stroke="#276f63" stroke-width="2.2" marker-end="url(#arrow)" fill="none"><path d="M175 223H201"/><path d="M360 223H386"/><path d="M545 223H571"/><path d="M730 223H756"/><path d="M915 223H941"/><path d="M837 278V351"/></g>
+<rect x="730" y="356" width="260" height="90" rx="8" fill="#fff2d9" stroke="#c09b57"/><text x="860" y="391" font-size="19" font-weight="700">蜂鸣器 BZ1</text><text x="860" y="419" font-size="15">得分/碰撞 → PWM短音60ms</text>
+<path d="M730 400H650V284" stroke="#bc8c3e" stroke-width="2" stroke-dasharray="6 5" fill="none"/><text x="589" y="330" font-size="14" fill="#8b672f">短音开始后屏蔽声控300ms</text>
+<rect x="20" y="356" width="530" height="90" rx="8" fill="white" stroke="#87ab9d"/><text x="285" y="391" font-size="18" font-weight="700">其他控制入口</text><text x="285" y="419" font-size="15">USB转串口 → 命令　｜　修复后的按键 → GPIO事件</text>
+<text x="560" y="493" font-size="15" fill="#547567">main()轮流处理七项任务；中断记录时间、采样和串口数据。蜂鸣器屏蔽不停止ADC采样。</text>
+</g></svg>

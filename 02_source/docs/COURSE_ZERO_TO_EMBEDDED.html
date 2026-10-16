@@ -1,0 +1,1141 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>从零开始：用声控小鸟学会做一个嵌入式项目</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../index.html">学习包首页</a><a href="COURSE_ZERO_TO_EMBEDDED.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#_2">导读：第一遍只走主线</a></li>
+<li><a href="#1">1. 从一台小游戏机认识嵌入式</a></li>
+<li><a href="#2">2. 接线前需要认识的电学概念</a><ul>
+<li><a href="#21">2.1 电压、电流、电阻和地</a></li>
+<li><a href="#22">2.2 数字信号与模拟信号</a></li>
+<li><a href="#23">2.3 万用表先会这两种用法</a></li>
+<li><a href="#24">2.4 单片机内部的几个角色</a></li>
+</ul>
+</li>
+<li><a href="#3">3. 准备工具，先不急着装所有软件</a><ul>
+<li><a href="#31">3.1 第一次运行所需</a></li>
+<li><a href="#32-windows">3.2 Windows 上的工具各管一件事</a></li>
+</ul>
+</li>
+<li><a href="#4">4. 接线、烧录、第一次运行</a><ul>
+<li><a href="#41">4.1 先确定方向和脚号</a></li>
+<li><a href="#42">4.2 烧录现成游戏</a></li>
+<li><a href="#43">4.3 开始玩，并记录看到什么</a></li>
+</ul>
+</li>
+<li><a href="#5">5. 认识源码、编译结果和版本</a></li>
+<li><a href="#6-c">6. 只学眼前够用的 C</a></li>
+<li><a href="#7">7. 主循环、灯和时间：先看最容易观察的输出</a><ul>
+<li><a href="#71-gpio-papbpc">7.1 GPIO：名字中的 PA、PB、PC 是什么</a></li>
+<li><a href="#72-tim-nvic">7.2 TIM 和 NVIC：谁负责提醒时间到了</a></li>
+</ul>
+</li>
+<li><a href="#8-adcdma">8. ADC、DMA 和音量：声音怎样变成数字</a><ul>
+<li><a href="#81">8.1 先看慢变化的电位器</a></li>
+<li><a href="#82-2048">8.2 麦克风安静时的 2048，不等于声音很大</a></li>
+<li><a href="#83">8.3 每块数据从哪里来</a></li>
+</ul>
+</li>
+<li><a href="#9">9. 两个状态机：一次响声与一局游戏</a></li>
+<li><a href="#10-oled-spi">10. OLED 和 SPI：从一个像素到一根数据线</a></li>
+<li><a href="#11-uart">11. UART：给程序开一个能说话的窗口</a></li>
+<li><a href="#12-pwm">12. PWM 蜂鸣器，以及为什么响完不能马上接受吹气</a></li>
+<li><a href="#13-pcbsmt">13. 从原理图到 PCB、SMT 和外壳</a><ul>
+<li><a href="#131">13.1 各种文件不要混用</a></li>
+<li><a href="#132-drc">13.2 为什么 DRC 为零，按键仍然可能接错</a></li>
+<li><a href="#133">13.3 先让裸板工作，再把它装进壳</a></li>
+</ul>
+</li>
+<li><a href="#14">14. 怎样做一次小修改，并让别人复现</a></li>
+<li><a href="#15">15. 十个渐进实验</a><ul>
+<li><a href="#1_1">实验 1：不改代码，让成品运行</a></li>
+<li><a href="#2-d2">实验 2：只改变 D2 闪烁周期</a></li>
+<li><a href="#3_1">实验 3：通过串口与程序双向对话</a></li>
+<li><a href="#4_1">实验 4：让电位器变成看得见的数字</a></li>
+<li><a href="#5_1">实验 5：把吹气拆成“波形中心”和“音量”</a></li>
+<li><a href="#6">实验 6：观察声音事件和游戏状态</a></li>
+<li><a href="#7_1">实验 7：调整游戏难度，再改一行显示文字</a></li>
+<li><a href="#8">实验 8：验证蜂鸣器，并检查它是否影响声控</a></li>
+<li><a href="#9_1">实验 9：用数据观察“大家轮流工作”</a></li>
+<li><a href="#10">实验 10：完成一次能交给别人的装配与发布</a></li>
+</ul>
+</li>
+<li><a href="#16">16. 排错时，怎样少走弯路</a></li>
+<li><a href="#17">17. 六周学习安排与教师验收</a><ul>
+<li><a href="#_3">选学：用已有采样链路做吉他调音</a></li>
+</ul>
+</li>
+<li><a href="#18">18. 常用词随手查</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="_1">从零开始：用声控小鸟学会做一个嵌入式项目</h1>
+<p>适用版本：正式固件 v1.0.0，STM32F103C8T6 主板，微雪 2.42 英寸 SSD1309 SPI 屏。</p>
+<p>你不需要先会画电路、写 C 或使用命令行。先把成品运行起来，再认识它的组成，然后每次只改一个小地方。这份教程的目标是让你能独立接线、烧录、观察数据、读懂主要代码、修改简单功能，并能用证据排查问题。完成它之后，还需要更多项目练习才能熟练从事嵌入式开发。</p>
+<p>本项目是一台<strong>用麦克风控制小鸟上跳的小游戏机</strong>：屏幕显示小鸟和管道，短吹气控制上跳，通过管道得分，碰撞后结束。正式版默认在得分或碰撞时发出短音。你也可以通过串口发送命令，查看采样数据、改变门限、暂停游戏。吉他调音器是选学功能，可以最后再看。</p>
+<p>先记住两个实际边界：</p>
+<ul>
+<li>用户已确认 GPIO SPI 正常游戏版运行正常。v1.0.0 在此基础上默认启用蜂鸣器；<strong>新版的实际响声、麦克风是否受到回声影响，还需要上板检查</strong>。</li>
+<li>本批 PCB 的 SW1～SW4 触点分组存在接法错误，当前由软件屏蔽；SW5 已拆除以解除复位短接。<strong>这份资料包含问题板的真实制造记录，不能把“软件正式版”理解为“原 PCB 可以直接复产”</strong>。先用声音和串口学习，按键返修与再生产以<a href="HARDWARE_AS_BUILT_AND_ERRATA.html">硬件现状与勘误</a>为准。</li>
+</ul>
+<h2 id="_2">导读：第一遍只走主线</h2>
+<table>
+<thead>
+<tr>
+<th>你现在要做什么</th>
+<th>阅读位置</th>
+<th>完成标志</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第一天把游戏玩起来</td>
+<td>第 1～4 节</td>
+<td>会接线、烧录、看到准备画面并开局</td>
+</tr>
+<tr>
+<td>知道程序在哪里工作</td>
+<td>第 5～7 节</td>
+<td>能从 <code>main()</code> 找到点灯和游戏更新</td>
+</tr>
+<tr>
+<td>理解声音如何控制游戏</td>
+<td>第 8～9 节</td>
+<td>能说清“电压→数字→音量→事件→上跳”</td>
+</tr>
+<tr>
+<td>理解屏幕、串口、蜂鸣器</td>
+<td>第 10～12 节</td>
+<td>会用命令辅助调试，能解释基本通信</td>
+</tr>
+<tr>
+<td>把硬件、外壳和软件串起来</td>
+<td>第 13～14 节</td>
+<td>能区分源文件、制造文件、烧录文件</td>
+</tr>
+<tr>
+<td>自己动手巩固</td>
+<td>第 15 节的十个实验</td>
+<td>每个实验留下修改、现象和结论</td>
+</tr>
+<tr>
+<td>安排长期学习、做课堂验收</td>
+<td>第 16～18 节</td>
+<td>能独立完成一次小修改和一次故障定位</td>
+</tr>
+</tbody>
+</table>
+<p>你遇到陌生词时，先看第 18 节术语表。需要进一步解释代码时，再读 <a href="BEGINNER_GUIDE.html">新手代码导读</a>；只想快速烧录时，读 <a href="GAME_QUICKSTART.html">游戏上手说明</a>。硬件参数和外设原始资料入口在 <a href="SOURCES.html">资料来源</a>。</p>
+<h2 id="1">1. 从一台小游戏机认识嵌入式</h2>
+<p>“嵌入式”可以先理解为：<strong>让一个小计算机嵌进具体设备，读取外部情况，再控制设备动作。</strong> 本项目的小计算机是 STM32 单片机，输入是声音、电位器、串口命令和修复后的按键，输出是画面、灯和蜂鸣器。</p>
+<p>完整的工作过程是：</p>
+<pre><code class="language-text">人短吹气
+  ↓
+麦克风把声音变成很小的电压变化
+  ↓
+模拟电路放大信号，让它落在单片机能测量的范围
+  ↓
+定时器安排测量 → ADC 把电压变成数字 → DMA 把数字放进数组
+  ↓
+程序计算这一小段声音的大小，判断是不是一次新的吹气
+  ↓
+游戏把小鸟速度改成向上，随后继续计算移动与碰撞
+  ↓
+程序画出下一帧 → SPI 把画面发给 OLED
+  ↓
+通过管道或发生碰撞时，PWM 驱动蜂鸣器短响
+</code></pre>
+<p>学习时也沿这条路线走。屏幕不亮时先看屏幕链路，声音不触发时先看采样数据，不必一次读懂全部代码。</p>
+<p>项目工作不只有编程：需求决定要做什么，原理图决定怎样连接，PCB 决定铜线和元件放在哪里，生产与焊接把图变成实物，固件赋予它行为，外壳让它方便拿取和使用，测试证明哪些行为确实成立，文档让下一个人能够复现。</p>
+<h2 id="2">2. 接线前需要认识的电学概念</h2>
+<h3 id="21">2.1 电压、电流、电阻和地</h3>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>先这样理解</th>
+<th>本项目的例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>电压，V</td>
+<td>两个点之间的电势差，必须说明相对哪个点</td>
+<td>“3.3V”通常指相对 GND 约 3.3V</td>
+</tr>
+<tr>
+<td>电流，A 或 mA</td>
+<td>电荷流动的快慢，需要有回路</td>
+<td>电源经过 LED、限流电阻，再回到地</td>
+</tr>
+<tr>
+<td>电阻，Ω 或 kΩ</td>
+<td>阻碍电流，或与其他元件形成分压</td>
+<td>LED 串联电阻限制电流</td>
+</tr>
+<tr>
+<td>GND，地</td>
+<td>这块电路共同使用的电压参考点</td>
+<td>主板与屏幕、USB-TTL 必须共地</td>
+</tr>
+<tr>
+<td>电容，F、µF、nF</td>
+<td>储存电荷，能缓和电压的快速变化</td>
+<td>芯片电源旁的小电容帮助稳定供电</td>
+</tr>
+<tr>
+<td>电源轨</td>
+<td>给许多元件供电的同一条网络</td>
+<td>主板的 +3V3、USB 输入的 VBUS</td>
+</tr>
+</tbody>
+</table>
+<p>对于普通电阻，电压、电流、电阻满足 <code>电压 = 电流 × 电阻</code>。例如在 1kΩ 电阻两端加 3.3V，电流约为 3.3mA。实际 LED 有自身的压降，计算串联电阻时不能把整个电源电压都当作电阻电压。</p>
+<p><strong>共地不等于把所有电源输出接在一起。</strong> 主板由 USB 供电时，本项目的小型 ST-LINK V2 和 USB-TTL 只连接需要的信号及 GND，它们的 3.3V、5V、VCC 输出留空。</p>
+<h3 id="22">2.2 数字信号与模拟信号</h3>
+<p>数字输入将一定范围的电压解释为 0 或 1，并不要求“0 必须是精确 0.000V，1 必须是精确 3.300V”。具体能识别的电压范围由芯片资料规定。GPIO 输出可以主动输出高、低电平，但不是给大负载供电的电源。</p>
+<p>模拟信号关心电压本身的大小。麦克风电压连续变化，电位器滑臂也可以停在中间电压。ADC 把这些电压量化为数字。本项目按 3.3V 逻辑接线，不向麦克风、ADC 或屏幕信号脚输入 5V。</p>
+<h3 id="23">2.3 万用表先会这两种用法</h3>
+<p>测电压：选直流电压档，黑表笔接目标板的 GND，红表笔接要测的点，电路上电。比如检查屏幕时，测屏幕端的 VCC，而不只测主板端，可以同时检查排线是否供电正常。</p>
+<p>测通断或电阻：先拔掉主板、下载器、USB-TTL 等全部供电。用两支表笔测同一根线的两端，直连通常接近表笔自身电阻。板上的并联元件、电容充电会影响读数；电阻值本身不能直接代替完整的电路判断。</p>
+<p>不要在带电板上用电阻档；不要用电流档直接跨接电源与地。断电后再插拔屏幕排线。初次检查贴片焊点时，让老师协助，避免表笔同时碰到相邻引脚。</p>
+<h3 id="24">2.4 单片机内部的几个角色</h3>
+<table>
+<thead>
+<tr>
+<th>部分</th>
+<th>做什么</th>
+<th>是否断电保留</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU</td>
+<td>按程序一步步运算、判断和调用函数</td>
+<td>运行状态不保留</td>
+</tr>
+<tr>
+<td>Flash</td>
+<td>保存烧进去的程序</td>
+<td>保留</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>保存正在运行的变量、采样和画面</td>
+<td>不保留</td>
+</tr>
+<tr>
+<td>外设</td>
+<td>GPIO、ADC、定时器、串口等专门硬件</td>
+<td>配置通常需重新初始化</td>
+</tr>
+<tr>
+<td>时钟</td>
+<td>决定 CPU 与外设以什么节奏工作</td>
+<td>上电后重新建立</td>
+</tr>
+</tbody>
+</table>
+<p>STM32F103C8T6 在本工程按 <strong>64KB Flash、20KB RAM</strong> 使用。<code>1KB=1024 字节</code>，一个字节有 8 位。最高分和串口修改的门限只存在 RAM 中，断电清零或恢复默认是当前设计行为。</p>
+<h2 id="3">3. 准备工具，先不急着装所有软件</h2>
+<h3 id="31">3.1 第一次运行所需</h3>
+<ul>
+<li>已焊接并处理复位故障的主板、USB 供电线。</li>
+<li>微雪 2.42 英寸白色 OLED 模块，SKU25742，61.5×39.5mm 板形，保持出厂 SPI 设置。</li>
+<li>小型 ST-LINK V2、连接线、Windows 电脑。</li>
+<li>万用表。</li>
+<li>交付包中的 <code>01_firmware/flappy_f103.hex</code>。</li>
+</ul>
+<p>做串口实验时增加 3.3V 逻辑的 USB-TTL；做电位器实验时接好 J5 电位器。外壳可以等裸板运行稳定后再装。板载麦克风与蜂鸣器不是外接 SPI 屏的一部分。</p>
+<h3 id="32-windows">3.2 Windows 上的工具各管一件事</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>本项目怎么使用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>STM32CubeProgrammer</td>
+<td>通过下载器把程序写进芯片</td>
+<td>第一次只用它烧现成 HEX</td>
+</tr>
+<tr>
+<td>Visual Studio Code</td>
+<td>查看、修改源码</td>
+<td>打开包含 <code>platformio.ini</code> 的源码目录</td>
+</tr>
+<tr>
+<td>PlatformIO IDE 扩展</td>
+<td>下载编译工具、把源码编成固件</td>
+<td>选择 <code>flappy_f103</code> 环境执行 Build</td>
+</tr>
+<tr>
+<td>串口终端</td>
+<td>发文字命令、收状态数据</td>
+<td>115200、8N1、无流控，发送带换行</td>
+</tr>
+<tr>
+<td>立创 EDA</td>
+<td>查看原理图、PCB、器件和工程</td>
+<td>阅读硬件设计及今后的修订</td>
+</tr>
+<tr>
+<td>支持 STL/STEP 的查看或建模软件</td>
+<td>看打印分件、机械装配</td>
+<td>先按既有图解装配，不要求先学建模</td>
+</tr>
+</tbody>
+</table>
+<p>通过各软件官方渠道安装。STM32CubeProgrammer 安装时装好 ST-LINK 相关驱动；插入下载器后确认软件能识别它。串口模块的 COM 口从 Windows“设备管理器”查看；COM 号会因电脑和 USB 口不同而变化，不照抄别人的编号。</p>
+<p>安装 VS Code 后，在扩展中安装 PlatformIO IDE，并等它完成初始化。将交付包解压到容易找到的目录，例如 <code>D:\Embedded\FlappyBird</code>。然后打开其中的 <strong><code>02_source</code> 目录</strong>，这一层应直接看到 <code>platformio.ini</code>、<code>src</code>、<code>include</code>。</p>
+<p>本项目已验证的构建环境包括 PlatformIO Core 6.1.19、<code>ststm32@20.0.0</code>、STM32CubeF1 包 1.8.7、GNU Arm 工具链包 1.70201.0。工程文件与发布验证清单记录确切配置。第一次编译需要联网下载依赖，不能把“下载失败”当作 C 代码错误。先使用项目原来的配置，不要同时升级依赖、换芯片型号和改代码。</p>
+<p><strong>编辑器、编译器、烧录器是三种职责。</strong> 只想运行现成游戏，暂时不用装好全部开发环境；想改程序，才需要编译步骤。</p>
+<h2 id="4">4. 接线、烧录、第一次运行</h2>
+<h3 id="41">4.1 先确定方向和脚号</h3>
+<p>让主板<strong>元件面朝自己，USB 在上、五个按键的位置在下</strong>。J2 是右侧竖着的 8 脚屏幕接口：<strong>底部是 1 脚，顶部是 8 脚</strong>。PCB 上的方形金属焊盘标记 1 脚；排母塑料上每个孔都可能是方的，不用塑料孔形判断。</p>
+<table>
+<thead>
+<tr>
+<th>J2 脚号</th>
+<th>屏幕端</th>
+<th>主板信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1，最下面</td>
+<td>VCC</td>
+<td>3.3V</td>
+</tr>
+<tr>
+<td>2</td>
+<td>GND</td>
+<td>地</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DIN</td>
+<td>PA7，发往屏幕的数据</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CLK</td>
+<td>PA5，时钟</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CS</td>
+<td>PA4，片选</td>
+</tr>
+<tr>
+<td>6</td>
+<td>DC</td>
+<td>PB8，命令/像素数据选择</td>
+</tr>
+<tr>
+<td>7</td>
+<td>RST</td>
+<td>PB9，屏幕复位</td>
+</tr>
+<tr>
+<td>8，最上面</td>
+<td>留空</td>
+<td>备用 GND</td>
+</tr>
+</tbody>
+</table>
+<p>屏幕只需要七根线。第八脚是额外的地，不表示有“八线 SPI”。早期方案的电源针序与当前不同，始终以这张最终表及板上编号为准。</p>
+<p>J3 是烧录口。按焊盘编号连接，当前上述摆放方向下从左到右为 1～4：</p>
+<table>
+<thead>
+<tr>
+<th>J3 脚号</th>
+<th>功能</th>
+<th>接小型 ST-LINK V2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>主板 3.3V</td>
+<td>本项目由 USB 供电，此脚留空</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SWDIO，PA13</td>
+<td>SWDIO</td>
+</tr>
+<tr>
+<td>3</td>
+<td>SWCLK，PA14</td>
+<td>SWCLK</td>
+</tr>
+<tr>
+<td>4</td>
+<td>GND</td>
+<td>GND</td>
+</tr>
+</tbody>
+</table>
+<p>看下载器自身丝印识别信号，不照搬不同外壳版本的排列。这个 J3 没引出 NRST。主板 Type-C 在此设计中只供电，不能用它直接下载程序，也不是串口接口。</p>
+<h3 id="42">4.2 烧录现成游戏</h3>
+<ol>
+<li>断电接好屏幕和 J3，再给主板 USB、下载器 USB 上电。</li>
+<li>打开 STM32CubeProgrammer，连接方式选 ST-LINK，接口 SWD，频率先用 100kHz，模式 Normal，复位方式 Software reset。</li>
+<li>点击连接。主板正确工作时应能识别目标；本项目按 64KB Flash 使用。连接失败先检查供电、共地、SWD 接线和复位故障记录。</li>
+<li>进入“擦除与编程”页面，选择 <code>01_firmware/flappy_f103.hex</code>。开启烧录校验及烧录后运行，然后下载。</li>
+<li>等待写入和校验均成功。若尚未运行，先断开软件连接，再重新给主板 USB 上电。</li>
+</ol>
+<p>HEX 包含地址信息。自己编译得到的 BIN 没有地址信息，使用 BIN 时将起始地址填为 <strong><code>0x08000000</code></strong>。正常下载不需要修改 RDP 读保护或选项字节；它们不是用来修复普通接线故障的按钮。</p>
+<h3 id="43">4.3 开始玩，并记录看到什么</h3>
+<p>上电后先安静约 1.5 秒。程序给麦克风一点稳定时间，再测环境底噪。准备画面从 <code>KEEP QUIET...</code> 变成 <code>BLOW TO START</code> 后，短吹气开局；再次短吹会让小鸟向上，不吹则下落。穿过管道加分，碰撞后显示 <code>GAME OVER</code>，安静片刻再短吹可重开。持续吹气不会无限上跳。</p>
+<p>正常游戏的 D2 每秒短闪一次；D1 是电源灯。v1.0.0 默认在得分和碰撞时发短音，普通上跳不播放音效。最高分保留到本次断电。当前故障按键不作为操作入口，暂停和继续通过串口完成。</p>
+<p><code>flappy_f103_compat.hex</code> 是相同功能、较慢屏幕发送的兼容版；正常版已经由用户测试正常，因此先使用正常版。<code>board_selftest.hex</code> 默认进入诊断页面，属于排查工具，不是开始玩游戏前必须走完的一关。</p>
+<h2 id="5">5. 认识源码、编译结果和版本</h2>
+<table>
+<thead>
+<tr>
+<th>文件或目录</th>
+<th>谁需要读</th>
+<th>它回答的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../src/main.c">src/main.c</a></td>
+<td>所有人</td>
+<td>上电后先做什么，一直循环做什么？</td>
+</tr>
+<tr>
+<td><a href="../include/app_config.h">include/app_config.h</a></td>
+<td>想调整行为的人</td>
+<td>门限、速度、间隔、音效默认值在哪里？</td>
+</tr>
+<tr>
+<td><a href="../src/app.c">src/app.c</a></td>
+<td>理解应用的人</td>
+<td>声音、命令、界面和游戏怎样联系？</td>
+</tr>
+<tr>
+<td><a href="../src/core.c">src/core.c</a></td>
+<td>学算法的人</td>
+<td>音量、声音事件、按键、游戏规则怎样计算？</td>
+</tr>
+<tr>
+<td><a href="../src/board.c">src/board.c</a></td>
+<td>学芯片外设的人</td>
+<td>怎样配置 GPIO、时钟、ADC、串口和中断？</td>
+</tr>
+<tr>
+<td><a href="../src/display.c">src/display.c</a></td>
+<td>学绘图的人</td>
+<td>怎样画字、画线、初始化屏幕并发送画面？</td>
+</tr>
+<tr>
+<td><a href="../src/oled_gpio_spi.c">src/oled_gpio_spi.c</a></td>
+<td>学通信波形的人</td>
+<td>怎样逐位控制 CLK、DIN 发送一个字节？</td>
+</tr>
+<tr>
+<td><a href="../src/command.c">src/command.c</a></td>
+<td>学输入处理的人</td>
+<td>怎样拒绝错误命令，提取合法参数？</td>
+</tr>
+<tr>
+<td><a href="../src/pitch.c">src/pitch.c</a></td>
+<td>选学</td>
+<td>怎样从声音周期估计吉他音高？</td>
+</tr>
+<tr>
+<td><code>tests/</code></td>
+<td>验证行为的人</td>
+<td>不接实物时，怎样检验算法和异常输入？</td>
+</tr>
+<tr>
+<td><a href="../platformio.ini">platformio.ini</a></td>
+<td>编译时查看</td>
+<td>用哪种芯片、框架和构建环境？</td>
+</tr>
+</tbody>
+</table>
+<p><code>.h</code> 文件声明函数和数据类型，像模块的使用说明；<code>.c</code> 文件实现具体行为。先读接口，再决定是否深入实现，不必沿每个函数一路追到底。</p>
+<p>编译器先将 C 编成机器指令，链接器把各部分安排到芯片对应地址，得到 ELF。ELF 保留调试等信息；HEX、BIN 更适合交给烧录工具。<strong>修改源码不会自动改变主板。必须重新编译，再烧录新生成的文件。</strong></p>
+<p>使用 VS Code 的 PlatformIO“Project Tasks → flappy_f103 → General → Build”，或在 PlatformIO 终端进入项目目录执行：</p>
+<pre><code class="language-sh">pio run -e flappy_f103
+</code></pre>
+<p>编译成功后，本次结果在 <code>.pio/build/flappy_f103/</code>。初学者可以选择其中的 <code>firmware.bin</code>，在 CubeProgrammer 填 <code>0x08000000</code> 下载。不要改完源码后又去烧 <code>01_firmware</code> 中未重新生成的发布文件。</p>
+<p>先读编译输出的<strong>第一处具体错误</strong>。例如参数超出允许范围时，源码中的编译期检查会解释问题；不要删掉检查，只为了让输出变成绿色。编译成功证明代码可以变成目标程序，不能证明所有接线、机械配合和实际声音都正常。</p>
+<h2 id="6-c">6. 只学眼前够用的 C</h2>
+<table>
+<thead>
+<tr>
+<th>C 概念</th>
+<th>本项目中的例子</th>
+<th>你要能解释什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>变量</td>
+<td><code>uint32_t now</code></td>
+<td>用一个名字保存当前毫秒数</td>
+</tr>
+<tr>
+<td>整数与小数</td>
+<td><code>uint16_t</code>、<code>float</code></td>
+<td>ADC 用整数，游戏速度用小数</td>
+</tr>
+<tr>
+<td>条件</td>
+<td><code>if (...)</code></td>
+<td>达到时间或收到数据后才执行</td>
+</tr>
+<tr>
+<td>循环</td>
+<td><code>while (1)</code>、<code>for (...)</code></td>
+<td>一直检查任务，或逐个处理数组元素</td>
+</tr>
+<tr>
+<td>函数</td>
+<td><code>game_flap(&amp;game)</code></td>
+<td>把一个明确动作交给另一个模块</td>
+</tr>
+<tr>
+<td>数组</td>
+<td>音频采样数组、画面数组</td>
+<td>用连续的位置保存一组相关数据</td>
+</tr>
+<tr>
+<td>结构体</td>
+<td><code>Game</code>、<code>AudioStats</code></td>
+<td>将同一件事的数据放在一起</td>
+</tr>
+<tr>
+<td>枚举</td>
+<td><code>GAME_READY</code> 等</td>
+<td>用可读名字表示有限的几种状态</td>
+</tr>
+<tr>
+<td>指针</td>
+<td><code>&amp;game</code>、<code>game-&gt;bird_y</code></td>
+<td>把数据所在位置交给函数，让它读写原对象</td>
+</tr>
+<tr>
+<td>常量宏</td>
+<td><code>APP_PIPE_SPEED</code></td>
+<td>编译前统一替换的配置值</td>
+</tr>
+<tr>
+<td><code>static</code></td>
+<td><code>app.c</code> 的模块变量</td>
+<td>由本文件保管，下一轮仍保留</td>
+</tr>
+<tr>
+<td>注释</td>
+<td><code>/* ... */</code></td>
+<td>给人解释单位、目的和边界，CPU 不执行</td>
+</tr>
+</tbody>
+</table>
+<p>阅读 <code>game_flap(&amp;game)</code> 时，<code>&amp;game</code> 是取 <code>game</code> 的地址。进入函数后，<code>game-&gt;bird_velocity</code> 表示通过这个地址访问结构体里的速度。初次学习不需要写复杂指针运算，先掌握“让函数修改同一份游戏数据”。</p>
+<p><code>20U</code> 表示无符号整数常量，<code>0.11f</code> 表示 <code>float</code> 小数。<code>uint32_t</code> 无法保存负数，适合时间和计数；向上的速度需要负数，因此这里用 <code>float</code>。变量名和注释尽量写出意思，不用几层缩写让读者猜。</p>
+<p>注释要解释<strong>为什么这样做、单位是什么、什么时候有效</strong>。例如“正常每秒亮 100ms；故障时改快闪”比单纯“设置灯”更有帮助。修改参数时同步修改对应解释，避免注释说一套、代码做另一套。</p>
+<h2 id="7">7. 主循环、灯和时间：先看最容易观察的输出</h2>
+<p><a href="../src/main.c">main.c</a> 中的 <code>app_init()</code> 只运行一次，完成硬件与应用初始化。随后 <code>while (1)</code> 按顺序调用七个任务：</p>
+<pre><code class="language-text">读取音频 → 处理串口命令 → 处理按键 → 更新游戏
+        → 更新选学调音 → 更新屏幕 → 更新灯与状态报告
+</code></pre>
+<p>这些函数轮流执行，并非真的有七个 CPU。每个函数只做一小步：没新数据就返回，没到时间就返回，显示每轮只发小段数据。这样下一个任务能尽快得到处理。</p>
+<h3 id="71-gpio-papbpc">7.1 GPIO：名字中的 PA、PB、PC 是什么</h3>
+<p>GPIO 是可配置的通用引脚。PA7 表示 A 端口第 7 个编号的 GPIO，PC13 同理；它们不等于芯片封装上的第 7 脚或第 13 脚，具体物理脚号看封装图。</p>
+<p>D2 接 PC13，采用低电平点亮。<code>board_led(true)</code> 内部把 PC13 拉低，<code>board_led(false)</code> 拉高。因此应用层只表达“亮/灭”，不用到处重复记住电路极性。D1 直接指示供电，不能用 <code>board_led()</code> 控制它。</p>
+<p>SW1～SW4 使用 PB15～PB12，配置为上拉输入，正常设计应当松开高、按下低。机械触点可能在切换时抖动，程序要求电平稳定 20ms 才确认变化。当前实板接法错误时会一直为低，程序必须先观察到稳定松开才允许它产生事件。<code>BLOCKED=F</code> 表示四个键都被屏蔽，并不代表主循环停了。</p>
+<h3 id="72-tim-nvic">7.2 TIM 和 NVIC：谁负责提醒时间到了</h3>
+<p>TIM 是定时器。本项目给几个定时器不同任务：</p>
+<table>
+<thead>
+<tr>
+<th>定时器</th>
+<th>工作</th>
+<th>主循环要不要一直盯着它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TIM3</td>
+<td>每 125µs 触发一次 ADC 双通道扫描</td>
+<td>不用，芯片内部连好触发关系</td>
+</tr>
+<tr>
+<td>TIM4</td>
+<td>每 1ms 产生中断，应用毫秒数加一</td>
+<td>不用，主循环读取累计值</td>
+</tr>
+<tr>
+<td>TIM1</td>
+<td>在 PA8 生成蜂鸣器 PWM</td>
+<td>不用逐次翻转引脚</td>
+</tr>
+</tbody>
+</table>
+<p>中断像一个及时通知：CPU 暂时处理短小的中断函数，然后回来继续主循环。NVIC 管理哪些中断允许进入，以及优先级。<code>TIM4_IRQHandler()</code> 处理毫秒计时；<code>DMA1_Channel1_IRQHandler()</code> 通知采样块完成。SysTick 另为 HAL 库维护时间，不把它与应用的 TIM4 毫秒数混为同一个变量。</p>
+<p>正常灯的判断是 <code>now % 1000U &lt; 100U</code>：每一秒中的前 100ms 点亮。蜂鸣器则比较 <code>now - beep_started</code> 是否达到 60ms。程序记住时间后继续做别的事，不在主循环里停着等 60ms。</p>
+<p>这里“不长时间阻塞”不表示执行任何函数都完全不花时间。软件 SPI 发一小段字节仍占用 CPU；分段的目的是把单次占用控制住，及时回到采样、命令和游戏。</p>
+<h2 id="8-adcdma">8. ADC、DMA 和音量：声音怎样变成数字</h2>
+<h3 id="81">8.1 先看慢变化的电位器</h3>
+<p>J5 第 1 脚是 3.3V，第 2 脚是电位器滑臂/PA1，第 3、4 脚是 GND。电位器两端接电源与地，中间滑臂接第 2 脚。滑臂电压随旋钮位置变化，ADC 读数通常在 0～4095 之间。</p>
+<p>电压近似换算为：</p>
+<pre><code class="language-text">电压 mV ≈ ADC 原始值 × VDDA_mV ÷ 4095
+例如：2048 × 3300 ÷ 4095 ≈ 1650mV
+</code></pre>
+<p>VDDA 是 ADC 模拟供电/参考相关的电压。程序默认用名义 3300mV，精度实验应测实际 VDDA，再用 <code>vdda</code> 命令设置。复位脚上曾测到的 3.15V 不是 ADC 参考电压。</p>
+<h3 id="82-2048">8.2 麦克风安静时的 2048，不等于声音很大</h3>
+<p>麦克风经板载模拟前端连接 PA0。声音是围绕中心上下变化的波形，电路把中心放在约 1.65V 附近，让波形能在单电源范围内向两侧变化。对应 ADC 中点大约是 2048，实际会有偏差。</p>
+<p>程序按一小段声音的平均值去掉中心，再计算变化幅度。例如：</p>
+<pre><code class="language-text">采样：1948、2148、1948、2148
+平均：2048
+偏差：-100、+100、-100、+100
+平方：10000、10000、10000、10000
+平方的平均再开平方：100
+</code></pre>
+<p>这个结果叫 RMS。它是本项目用于门限判断的音量数值，单位是 ADC 计数，不是测声级计里的分贝。恒定的 <code>2048、2048、2048、2048</code> 得到 RMS=0。具体算法在 <code>audio_stats_compute()</code>，使用普通 <code>float</code> 和 <code>sqrtf()</code>，可以直接对照算式阅读。</p>
+<h3 id="83">8.3 每块数据从哪里来</h3>
+<p>TIM3 每秒触发 8000 次扫描；每次先测 PA0 音频，再测 PA1 电位器。<strong>两个通道各自都是 8000 点/秒</strong>。DMA 是自动搬数据的硬件，把结果放到数组中：</p>
+<pre><code class="language-text">音频0，电位器0，音频1，电位器1，……
+</code></pre>
+<p>数组分成前后两半，每半含 128 个音频值和 128 个电位器值。填完半块需要 <code>128 ÷ 8000 = 0.016 秒</code>，也就是 16ms。硬件写后半时，主循环可以取已完成的前半；写到末尾后循环回来。</p>
+<p><code>board_audio_read()</code> 成功时给出新的一块音频和电位器平均值，没有新块就返回 <code>false</code>。如果主循环来不及处理，旧数据可能被覆盖，<code>LOST</code> 增加。程序不会把间断的音频硬拼成连续波形去调音。</p>
+<h2 id="9">9. 两个状态机：一次响声与一局游戏</h2>
+<p>状态机就是“记住目前的情况，根据输入决定下一步”。不用先背复杂图论。</p>
+<p>声音判断在 <code>audio_gate_update()</code>：先等安静，准备好之后遇到超过门限的响声，发出一次事件；发出后又回去等安静。默认安静至少 50ms、两次有效事件至少相隔 180ms。门限为 100 时，安静恢复使用 75，触发使用 100，这样不容易在同一个门槛附近来回抖动。</p>
+<p>上电标定先等约 200ms，再统计背景音，约 1.2 秒后完成；时间还依赖实际收到采样。计算基础是“背景平均 RMS × 3 + 30”，再限制到 70～2000。<code>APP_DEFAULT_SOUND_THRESHOLD</code> 是启动值，标定会覆盖它。</p>
+<p>游戏本身有四种状态：</p>
+<table>
+<thead>
+<tr>
+<th>当前状态</th>
+<th>做什么</th>
+<th>常见转移</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>READY</td>
+<td>等开始</td>
+<td>吹气或 <code>flap</code> → PLAYING</td>
+</tr>
+<tr>
+<td>PLAYING</td>
+<td>移动、判碰撞、计分</td>
+<td><code>pause</code> → PAUSED；碰撞 → OVER</td>
+</tr>
+<tr>
+<td>PAUSED</td>
+<td>保留坐标与速度，暂时不移动</td>
+<td><code>resume</code> → PLAYING</td>
+</tr>
+<tr>
+<td>OVER</td>
+<td>显示结果</td>
+<td>安静后再次吹气或 <code>flap</code> → 新一局</td>
+</tr>
+</tbody>
+</table>
+<p><code>play</code> 总是开始新的一局；<code>resume</code> 才是继续暂停的一局。<code>menu</code> 回到准备界面。进入 <code>diag</code> 或 <code>tuner</code> 会清理当前场景，不是保存游戏的暂停操作。</p>
+<p>屏幕左上角为 <code>(0,0)</code>，向下的坐标增大。<code>game_step()</code> 每 20ms 先给速度加上重力，再给位置加上速度；<code>game_flap()</code> 把速度设为 <code>-1.80f</code>，负数表示向上。位置和速度直接用小数表示，不要求先学定点数技巧。</p>
+<p>管道向左移，整根越过小鸟后加一分；移出屏幕后从右侧再出现。<code>Game</code> 结构体把小鸟位置、速度、管道、分数和状态放在一起，这就是结构体在真实项目里的用途。</p>
+<h2 id="10-oled-spi">10. OLED 和 SPI：从一个像素到一根数据线</h2>
+<p>OLED 有 128×64 个黑白像素，共 8192 个点，每点一位，整幅图需要 1024 字节。应用先往画面数组里画字、画管道，再交给显示驱动发送。</p>
+<p>屏幕分八页，每页高 8 像素。<code>display_present()</code> 提交画面；<code>display_poll()</code> 每轮推进一小步，最多发送 8 字节像素。另一个 1024 字节数组记住上次已发内容，相同的小块可以跳过。这样的做法多用一点 RAM，但用普通数组比较容易读懂，也减少重复发送。</p>
+<p>SPI 是同步通信：数据线给出数据，时钟线告诉接收端何时取这一位。本屏幕只需要主板发过去，不使用回读数据线。CS 选中屏幕，DC 表示当前发的是控制命令还是像素，RST 用于复位。</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>谁产生 CLK 和 DIN</th>
+<th>本项目的使用情况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>硬件 SPI</td>
+<td>STM32 内置 SPI 外设自动发送</td>
+<td>原对照程序黑屏，具体原因尚未确定</td>
+</tr>
+<tr>
+<td>软件 SPI</td>
+<td>C 程序逐位改变 GPIO 电平</td>
+<td>当前正式游戏使用，正常版已实测运行</td>
+</tr>
+</tbody>
+</table>
+<p>两者都可以遵循相同 SPI 协议。本项目均按 Mode 0、高位先发：CLK 空闲为低，先准备 DIN，再拉高 CLK 让屏幕采样，然后拉低 CLK，继续下一位。软件实现见 <a href="../src/oled_gpio_spi.c">oled_gpio_spi.c</a>。Mode 0～3 只是时钟空闲电平、采样边沿的组合，不是不同数量的接线接口。</p>
+<p>这次真实排查过程是：供电与复位脚稳态约 3.3V，五根信号线直连正确，硬件 SPI 诊断仍黑屏；改用较慢的 GPIO SPI 后，屏幕能显示全亮、棋盘格与文字；再缩短 GPIO 等待、分段刷新，正常游戏也由用户确认运行正常。</p>
+<p><strong>证据证明 GPIO 方案可用，没有证明唯一原因就是硬件 SPI 太快。</strong> 更换时同时改变了速度与实现方式，时序、配置、信号质量等因素尚未被逐一隔离。万用表能看供电和稳态电平，却无法证明快速 CLK/DIN 波形正确；进一步分析通常需要逻辑分析仪或示波器。</p>
+<p>正式版 GPIO 等待参数为 24，兼容版为 192。这是软件循环次数，不是直接的 Hz 数值，实际速度受主频、编译结果和中断影响。不要把“24”当作 24MHz。<code>SPI_ERR=0</code> 只说明发送代码没有报告错误，单向接口无法确认屏幕真的收到。</p>
+<h2 id="11-uart">11. UART：给程序开一个能说话的窗口</h2>
+<p>主板 J4：1=3.3V，2=PA9/TX，3=PA10/RX，4=GND。主板 TX 接 USB-TTL 的 RXD，主板 RX 接对方 TXD，GND 共地；USB-TTL 的 VCC 留空。模块必须采用 3.3V 逻辑。</p>
+<p>终端选对应 COM 口，设置 <strong>115200、8 数据位、无校验、1 停止位、无流控</strong>，即 115200 8N1。每条命令末尾带换行，通常在发送区选择发送 CR/LF 或回车换行即可。先发 <code>help</code>，再发 <code>status</code>。</p>
+<p>UART 没有单独的 CLK 线，收发双方事先约定波特率等格式。它与 SPI 的节拍方式不同。小型 ST-LINK V2 在本项目用来烧录和调试，不能代替这里的 USB-TTL。</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>help</code>、<code>status</code></td>
+<td>看帮助、读一次当前状态</td>
+</tr>
+<tr>
+<td><code>stream on</code>、<code>stream off</code></td>
+<td>每秒报告状态、关闭周期报告</td>
+</tr>
+<tr>
+<td><code>menu</code>、<code>play</code>、<code>flap</code></td>
+<td>回准备、开新局、上跳</td>
+</tr>
+<tr>
+<td><code>pause</code>、<code>resume</code></td>
+<td>暂停、继续</td>
+</tr>
+<tr>
+<td><code>diag</code></td>
+<td>看诊断数据</td>
+</tr>
+<tr>
+<td><code>cal</code></td>
+<td>重新标定背景声音，随后保持安静</td>
+</tr>
+<tr>
+<td><code>threshold 150</code></td>
+<td>手动设 RMS 门限，同时关闭电位器控制和正在进行的标定</td>
+</tr>
+<tr>
+<td><code>pot on</code>、<code>pot off</code></td>
+<td>启用、关闭电位器调门限</td>
+</tr>
+<tr>
+<td><code>vdda 3295</code></td>
+<td>将 ADC 换算参考设为实测 3295mV，此数只是格式示例</td>
+</tr>
+<tr>
+<td><code>mute on</code>、<code>mute off</code></td>
+<td>关闭、开启游戏蜂鸣器音效，声控仍工作</td>
+</tr>
+<tr>
+<td><code>beep</code></td>
+<td>主动测试一次短音，调音模式拒绝执行</td>
+</tr>
+<tr>
+<td><code>tuner</code></td>
+<td>进入选学调音模式</td>
+</tr>
+</tbody>
+</table>
+<p><code>status</code> 里，<code>ADC</code> 是音频平均值，<code>RMS</code> 是当前音量，<code>TH</code> 是实际门限，<code>BLOCKS</code> 是累计采样块，<code>LOST</code> 是漏处理的块数，<code>FAULT</code> 是板级故障记录。先比较“安静”和“短吹”两种条件，不要只看孤立的一次读数。完整字段解释见 <a href="BEGINNER_GUIDE.html">代码导读</a>。</p>
+<p>命令要先解析，再执行。<code>command_parse()</code> 会拒绝 <code>threshold abc</code>、越界参数和多余单词；收到一半的命令不能猜测执行。接收中断先保存字符，主循环再拼成一整行。这样串口不会因为等用户输入而把游戏卡住。</p>
+<h2 id="12-pwm">12. PWM 蜂鸣器，以及为什么响完不能马上接受吹气</h2>
+<p>BZ1 是板载无源压电蜂鸣器，由 PA8 的 TIM1_CH1 经串联电阻驱动。无源蜂鸣器需要周期变化的电压；仅持续输出一个高电平，不等同于让它发出连续音调。</p>
+<p>PWM 是周期性的高、低电平。频率表示一秒重复多少次，占空比表示一个周期里高电平占多大比例。当前短音设置约 4kHz、50% 占空比、持续 60ms。频率决定驱动节拍，实际响度还与器件、安装和结构有关，不能只凭占空比给出响度保证。</p>
+<p><code>board_buzzer(4000)</code> 启动 PWM，<code>board_buzzer(0)</code> 关闭并让引脚回到低电平。<code>tone()</code> 只记录开始时间就返回，<code>app_process_audio()</code> 到时间后关闭，不写长延时。</p>
+<p>蜂鸣器和麦克风在同一块板上，程序可能把自己的提示音当成玩家的声音。因此从开始响起算，声控事件抑制 <strong>300ms</strong>；60ms 音效结束后还有一段余音处理时间。抑制结束后，声音门还需重新观察至少 50ms 的安静，才准备下一次触发。</p>
+<p>这段时间 ADC 仍在采样，灯、显示和游戏仍在运行；只是暂时不把麦克风音量变成上跳事件。串口 <code>flap</code> 仍是独立的人工命令。得分后短时间内吹气可能不被接受，这是当前抑制方法的取舍，应在实板上体验。</p>
+<p>正式版默认音效开启。<code>mute on</code> 关游戏音效，<code>mute off</code> 恢复，它们不关麦克风。<code>beep</code> 是明确要求发一次测试音，不用它判断游戏静音开关是否生效。调音模式禁用蜂鸣器，避免污染频率测量。</p>
+<p>新版本要重点观察：是否有短音、是否按时停下、是否因自己的声音自动上跳或重开、合盖后回声是否更明显。没有出现问题的证据之前，不宣称“麦克风自激已经完全排除”。</p>
+<h2 id="13-pcbsmt">13. 从原理图到 PCB、SMT 和外壳</h2>
+<h3 id="131">13.1 各种文件不要混用</h3>
+<table>
+<thead>
+<tr>
+<th>资料</th>
+<th>记录什么</th>
+<th>通常给谁用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EDA 工程、原理图</td>
+<td>元件、网络和可编辑设计</td>
+<td>修改设计、读电路的人</td>
+</tr>
+<tr>
+<td>PCB 版图</td>
+<td>封装、铜线、焊盘、过孔、板框</td>
+<td>布局布线和制造检查</td>
+</tr>
+<tr>
+<td>Gerber、钻孔</td>
+<td>各制造层形状、孔位孔径</td>
+<td>PCB 工厂</td>
+</tr>
+<tr>
+<td>BOM</td>
+<td>元件型号、数量、位号等</td>
+<td>采购、SMT 配料</td>
+</tr>
+<tr>
+<td>CPL/坐标文件</td>
+<td>贴片器件位置、角度、层面</td>
+<td>SMT 贴装</td>
+</tr>
+<tr>
+<td>HEX/BIN</td>
+<td>单片机执行的程序</td>
+<td>烧录工具</td>
+</tr>
+<tr>
+<td>STL</td>
+<td>三角网格形状</td>
+<td>3D 打印切片和加工</td>
+</tr>
+<tr>
+<td>STEP</td>
+<td>更适合机械 CAD 交换的几何体</td>
+<td>查看、修改和装配检查</td>
+</tr>
+<tr>
+<td>GLB</td>
+<td>方便展示的三维模型</td>
+<td>旋转查看总装外观</td>
+</tr>
+</tbody>
+</table>
+<p>Gerber 不是能完整还原全部设计语义的源码，HEX 也不是 C 源码。保留可编辑工程，别人才能方便修改。BOM 有了器件型号，不代表所有手工连接件和外购屏幕都包含在 SMT 订单里。</p>
+<p>阅读原理图时先沿四条主线：供电进入和稳压、MCU 最小系统、输入链路、输出链路。电容 C7、按键 SW5、蜂鸣器 BZ1、接插件 J2 中，字母通常表示器件类型，数字用于区分同类元件；“C7”不是电容的容量。</p>
+<h3 id="132-drc">13.2 为什么 DRC 为零，按键仍然可能接错</h3>
+<p>DRC 主要检查设计规则，例如间距、线宽和网络连接约束。按键内部哪两个焊脚一直相连，是器件真实的电气行为。若原理图或封装配对一开始就理解错了，工具可能仍然认为布线符合你给它的规则。</p>
+<p>本项目四脚轻触开关的内部常通分组曾与设计接法冲突，使输入或复位信号被接地。SW5 导致主控一直被复位，拆除后才恢复正常连接。SW1～SW4 的问题由软件识别并屏蔽，但物理电路还需返修。这个案例要学习的是：<strong>核对符号、封装、实物内部连接和制造结果四者是否一致</strong>，而非只追求一个绿色检查结果。</p>
+<p>交付包 <code>03_hardware</code> 留有真实资料；先读<a href="HARDWARE_AS_BUILT_AND_ERRATA.html">硬件现状与勘误</a>，再由具备焊接与电路检查能力的人完成设计修订、检查和样板验证。不要从 <code>06_history</code> 随意选一个“看起来最新”的旧文件下单。外壳 EDA 副本用于机械外壳，也不能替代生产主板工程下 PCB 订单。</p>
+<h3 id="133">13.3 先让裸板工作，再把它装进壳</h3>
+<p>V4 使用底壳、主盖、按键面板、屏幕托架、四个主板压片，共八个装配打印件；另有一个 <code>fit_coupon.stl</code> 公差试片，不装入成品。主板靠支承和压片固定，不依赖板上的未知角孔。</p>
+<p>完整装配 STEP/GLB 用来了解空间关系，<strong>打印使用各个分件 STL</strong>，不要把带主板、屏幕参考模型的整机模型当作一个实体打印。STL 本身不可靠地声明单位，切片时按本项目毫米和 100% 比例核对尺寸；不用未知来源的 G-code，因为它还包含具体打印机设置。</p>
+<p>建议顺序是：</p>
+<ol>
+<li>裸板确认供电、烧录、屏幕和游戏正常，记录接线。</li>
+<li>先检查公差试片及屏幕托架与实物、螺丝的配合，再打印整套；不硬拧塑料柱。</li>
+<li>全部断电，清理毛刺和过长焊脚，把主板放入底壳支承，装压片与按键面板。</li>
+<li>用屏幕原厂固定柱连接托架，再将托架装到主盖；承力放在固定结构上，不压玻璃、排线或背面元件。</li>
+<li>按 J2 最终针序连接屏幕，留出抬盖所需线长，先开盖检查一次。</li>
+<li>断电后缓慢合盖，确认没有夹线或顶住接头，再轻拧固定。</li>
+<li>重新检查 USB 插拔、屏幕、声音触发及蜂鸣器回声；故障按键仍按勘误处理。</li>
+</ol>
+<p>具体螺丝、垫片规格和图示以 <code>04_enclosure</code> 中 V4 的 <code>ASSEMBLY_GUIDE.md</code> 为准。三维模型通过几何检查不等于每台打印机都能直接严丝合缝；实际线束、螺丝、材料和公差需要试装。</p>
+<h2 id="14">14. 怎样做一次小修改，并让别人复现</h2>
+<p>先选一个明确目标，比如“管道慢一些”。在 <a href="../include/app_config.h">app_config.h</a> 把 <code>APP_PIPE_SPEED</code> 从 <code>1.0f</code> 改成 <code>0.7f</code>，保留 <code>APP_GAME_STEP_MS=20U</code>。重新编译，烧入本次产生的文件，在同一套接线下观察。</p>
+<p>记录四件事：<strong>改前是什么、改了哪里、预计看到什么、实际看到什么</strong>。如果结果不符合预期，先核对新固件是否真的烧进去，再看是否有运行时命令覆盖了默认值。</p>
+<p>三个容易混淆的层次：</p>
+<ul>
+<li>修改头文件并编译烧录：改变下一次上电的默认行为。</li>
+<li>发送 <code>threshold</code>、<code>mute</code> 等命令：只改本次 RAM 中的设置。</li>
+<li>自动标定、电位器控制：运行时还会改变有效门限，最后以 <code>status</code> 的 <code>TH</code> 为准。</li>
+</ul>
+<p>本机自动测试入口是 <a href="../tools/run_tests.py">tools/run_tests.py</a>，需要电脑上的 Python 和本机 GCC。<strong>给 STM32 编译的 Arm GCC，与运行这些电脑测试的本机 GCC 用途不同。</strong> Windows 新手先完成 Build 和实板实验；课程后半程由教师准备本机 GCC 或 WSL 测试环境，再执行 <code>python3 tools/run_tests.py</code>。不要为了第一次烧录就把所有测试环境问题一起解决。</p>
+<p>自动测试可以构造安静音频、一次响声、非法命令、碰撞位置等，确认程序在这些输入下符合规则。真实麦克风噪声、焊接、屏幕电气时序和壳体回声必须上板观察。两类测试互相补充。</p>
+<h2 id="15">15. 十个渐进实验</h2>
+<p>每次先把现有可用版本保存好，再做一个小变化。实验记录可以是一个文本文件或笔记本。按顺序进行，上一项的故障未定位时，不同时引入下一项改动。</p>
+<h3 id="1_1">实验 1：不改代码，让成品运行</h3>
+<p><strong>步骤：</strong> 按第 4 节接线，烧录正式 HEX，上电保持安静，短吹开局，不继续吹直到游戏结束，再短吹重开。</p>
+<p><strong>预期：</strong> D2 每秒短闪，OLED 有准备、运行、结束画面；重开时本局分数重新计算。记录得分或碰撞短音的实际表现，新音效仍以实物结果为准。</p>
+<p><strong>故障线索：</strong> D1 亮而 D2 不闪，不足以说明程序正常；D2 正常而黑屏，先检查屏端供电与接线；有画面但吹气无效，进入实验 3、5 看数据。</p>
+<p><strong>检查题：</strong> 电脑断开后为什么程序还能运行？再次开机时最高分为什么消失？</p>
+<h3 id="2-d2">实验 2：只改变 D2 闪烁周期</h3>
+<p><strong>步骤：</strong> 找到 <code>app_update_status()</code> 的正常分支，将 <code>now % 1000U &lt; 100U</code> 改为 <code>now % 500U &lt; 100U</code>。编译并烧录新生成的文件。</p>
+<p><strong>预期：</strong> 无故障时 D2 每半秒亮 100ms。游戏仍可运行。观察完恢复原值并重新编译。</p>
+<p><strong>故障线索：</strong> 仍每秒闪可能烧了旧文件；均匀快闪可能进入故障分支，此时先查 <code>FAULT</code> 与采样是否持续，不修改故障逻辑来掩盖问题。</p>
+<p><strong>检查题：</strong> 为什么 <code>board_led(true)</code> 可以点亮实际低电平点亮的 LED？为什么不在 <code>main()</code> 另写一份点灯逻辑？</p>
+<h3 id="3_1">实验 3：通过串口与程序双向对话</h3>
+<p><strong>步骤：</strong> 接 J4 和 3.3V USB-TTL，发送 <code>help</code>、<code>status</code>、<code>stream on</code>、<code>stream off</code>。再试 <code>threshold abc</code>，然后试合法的 <code>threshold 150</code>，用 <code>status</code> 对照。</p>
+<p><strong>预期：</strong> 有明确命令响应；非法参数被拒绝，合法参数使 <code>TH=150</code>。终端发送带换行，命令才完整。</p>
+<p><strong>故障线索：</strong> 完全没输出先看 COM 口、共地、TX/RX交叉；乱码先看波特率和格式；只收不发先看对方 TX 到主板 RX 和换行设置。</p>
+<p><strong>检查题：</strong> USB 供电口为什么不能代替 J4？为什么收到 <code>threshold 1</code> 的一部分时不能立即执行？</p>
+<h3 id="4_1">实验 4：让电位器变成看得见的数字</h3>
+<p><strong>步骤：</strong> 断电接好 J5，运行后发 <code>diag</code>、<code>pot off</code>。慢慢转动电位器，观察 <code>POT</code> 原始值，再用直流档测滑臂相对 GND 的电压，对照换算。最后 <code>pot on</code> 看 <code>TH</code> 随旋钮变化，再 <code>pot off</code>。</p>
+<p><strong>预期：</strong> 滑臂电压与原始值同方向变化；默认映射把 0～4095 变成门限约 40～640。端点是否精确达到极限以实际接线与测量为准。</p>
+<p><strong>故障线索：</strong> 一直 0 或一直满值，检查滑臂是否接对；不接旋钮时漂动是悬空输入可能出现的现象，不能靠游戏算法修复。</p>
+<p><strong>检查题：</strong> 为什么 2048 大约对应半电源电压？默认的 3300mV 为什么不是精密测量结论？</p>
+<h3 id="5_1">实验 5：把吹气拆成“波形中心”和“音量”</h3>
+<p><strong>步骤：</strong> 发 <code>menu</code>、<code>pot off</code>、<code>cal</code>，安静等标定完成。发 <code>diag</code>，分别记录安静、轻吹、较强短吹时的 <code>ADC</code>、<code>RMS</code>、<code>PEAK</code>、<code>CLIP</code>。找出安静与短吹 RMS 之间的门限，再回 <code>menu</code> 用 <code>threshold</code> 设置。</p>
+<p><strong>预期：</strong> 吹气时 RMS 相比安静明显增加；音频平均值不需要降到 0；适当门限能分开背景和有效输入。</p>
+<p><strong>故障线索：</strong> 两种情况下 RMS 完全不变，检查麦克风及模拟链路；大量削顶时先减小输入声音或检查前端，不直接把最大值当作最好结果。</p>
+<p><strong>检查题：</strong> 为什么先减平均值？为何这里的 RMS=100 不能说成 100 分贝？</p>
+<h3 id="6">实验 6：观察声音事件和游戏状态</h3>
+<p><strong>步骤：</strong> 准备界面持续吹气，再改成分开的短吹，比较上跳次数。然后用串口 <code>play</code> 开局、迅速 <code>pause</code>，等几秒 <code>resume</code>；游戏结束后 <code>flap</code> 重开，再 <code>menu</code>。</p>
+<p><strong>预期：</strong> 持续响声不自动连跳；暂停时位置和速度保留，继续后从原状态运行；<code>play</code> 会重开，<code>resume</code> 才继续。</p>
+<p><strong>故障线索：</strong> 短吹过密可能没经过安静时间或冷却期；得分提示音后 300ms 的声控抑制也会影响输入，试 <code>mute on</code> 对照。</p>
+<p><strong>检查题：</strong> 声音门与游戏为什么要分成两套状态？暂停时发 <code>flap</code> 应不应该使小鸟移动？</p>
+<h3 id="7_1">实验 7：调整游戏难度，再改一行显示文字</h3>
+<p><strong>步骤：</strong> 先只把 <code>APP_PIPE_SPEED</code> 改为 <code>0.7f</code>，编译烧录并对比；恢复后，再单独把 <code>APP_PIPE_GAP</code> 从 26 改为 32。最后在 <code>draw_game()</code> 的准备标题处改成短英文，例如 <code>HELLO</code>，重新编译。</p>
+<p><strong>预期：</strong> 管道分别变慢或缺口变大；标题改变。屏幕坐标方向、文字大小应能与代码对应。</p>
+<p><strong>故障线索：</strong> 同时改步进时间会混入另一种速度影响；画面改字不支持汉字，因为目前只有英文数字等小字库；过长文字会被裁掉，不自动换行。</p>
+<p><strong>检查题：</strong> 重力为什么让速度逐渐增大？显示每 40ms 提交一次，与游戏每 20ms 走一步是什么关系？</p>
+<h3 id="8">实验 8：验证蜂鸣器，并检查它是否影响声控</h3>
+<p><strong>步骤：</strong> 发 <code>menu</code>，保持环境安静，发 <code>beep</code>。记录是否短响、是否按时停止，等候后确认没有因这个提示音自行开局。再通过一次碰撞体验游戏音效，发 <code>mute on</code> 重复，最后 <code>mute off</code>。如果实际出现误触发，保留静音运行并记录现象。</p>
+<p><strong>预期：</strong> 测试短音和游戏事件音短促；<code>mute on</code> 后游戏得分/碰撞不发声，吹气仍有效。抑制窗口内不产生麦克风事件，结束后需重新满足安静条件。</p>
+<p><strong>故障线索：</strong> 无声音不能仅靠万用表确认 PWM，应检查器件、焊接、引脚和程序路径；只在合盖后误触发，先比较声学回声、器件距离和噪声门限。不要把 <code>beep</code> 的主动测试行为误当作静音失效。</p>
+<p><strong>检查题：</strong> 60ms 发声结束，为什么还保留到 300ms 的声控抑制？为什么频率与持续时间是两个参数？</p>
+<h3 id="9_1">实验 9：用数据观察“大家轮流工作”</h3>
+<p><strong>步骤：</strong> 保持原来的已验证 GPIO SPI 速度，发 <code>stream on</code>。边玩边发 <code>pause</code>、<code>status</code>、<code>resume</code>，观察采样 <code>BLOCKS</code> 持续增加和 <code>LOST</code> 变化。记录数分钟运行前后的数据。再将 <code>APP_DISPLAY_INTERVAL_MS</code> 从 40 改成 80，比较画面与游戏规则，最后恢复。</p>
+<p><strong>预期：</strong> 接收命令、采样、显示能协同工作；显示提交间隔变大时画面更新较疏，游戏算法仍以 20ms 步进为目标。若 <code>LOST</code> 增长，诚实记录为需要分析的运行证据，不自动判为合格。</p>
+<p><strong>故障线索：</strong> 新功能里加入长等待、整屏一次发送、过量格式化输出，都会延长主循环；暂停调试器也可能改变时序，不能把停在断点的情况与正常运行混在一起。</p>
+<p><strong>检查题：</strong> <code>BLOCKS</code> 增加证明了什么，没有证明什么？为什么一次发 8 字节仍然需要 CPU 时间？</p>
+<h3 id="10">实验 10：完成一次能交给别人的装配与发布</h3>
+<p><strong>步骤：</strong> 保存自己修改后的源码、构建命令和固件，写出版本和差异。按第 13 节与 V4 图解先试装，再固定屏幕与线束。合盖后重复实验 1、8 和一段连续运行。让另一个人只看你的说明接线、烧录和运行。</p>
+<p><strong>预期：</strong> 资料中能找到对应源码与固件；别人知道当前按键缺陷和哪些项目已经实测；合盖不夹线，显示和声控仍正常，音效影响有记录。实物未试装的事项明确标记未验证。</p>
+<p><strong>故障线索：</strong> “我的电脑上能用”而对方打不开工程，检查是否漏了 <code>platformio.ini</code>、配置头和依赖说明；拿到旧 HEX，检查路径和版本；壳体装不下先检查模块版本、打印比例、接头高度和公差。</p>
+<p><strong>检查题：</strong> 哪些文件给 PCB 工厂，哪些给打印厂，哪些给烧录软件？为什么一次软件发布不能自动使问题 PCB 变成可复产版本？</p>
+<h2 id="16">16. 排错时，怎样少走弯路</h2>
+<p>先描述现象，再分层检查，最后只改一个变量。不要一开始就同时换接线、改时钟、换驱动和重装软件。</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>先观察什么</th>
+<th>下一层才看什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>下载器连不上</td>
+<td>主板供电、GND、SWDIO/SWCLK、复位是否被拉低</td>
+<td>连接设置、芯片与焊接</td>
+</tr>
+<tr>
+<td>灯有电但程序没动静</td>
+<td>是否烧录校验成功、是否运行了新固件</td>
+<td>时钟、复位、程序故障记录</td>
+</tr>
+<tr>
+<td>D2 正常、OLED 黑屏</td>
+<td>屏端 VCC/GND、RST、J2 脚序与导通</td>
+<td>诊断固件、接口设置、通信时序</td>
+</tr>
+<tr>
+<td>游戏可用，吹气不灵</td>
+<td>安静/短吹 RMS、TH、标定与旋钮状态</td>
+<td>模拟前端、采样是否丢块</td>
+</tr>
+<tr>
+<td>游戏自己跳</td>
+<td>环境音、门限、持续声音、蜂鸣器回声</td>
+<td>声音门状态和实际信号</td>
+</tr>
+<tr>
+<td>串口乱码</td>
+<td>COM 口、115200/8N1、共地</td>
+<td>线序、信号电平、时钟</td>
+</tr>
+<tr>
+<td>按键一直按下</td>
+<td>已知硬件勘误、<code>KEYS_LOW</code>、<code>BLOCKED</code></td>
+<td>触点分组与修复，不强行解除屏蔽</td>
+</tr>
+<tr>
+<td>合盖后才出问题</td>
+<td>夹线、接口受力、麦克风通道、回声</td>
+<td>公差、走线、结构修改</td>
+</tr>
+</tbody>
+</table>
+<p>报告故障时写清：固件版本、板子与屏幕版本、接线是否变化、供电方式、能够稳定重复的步骤、实际日志或测量值、自己改过什么。比如“VCC 在屏端测得 3.3V，D2 每秒短闪，五根线断电测量均导通”比“应该都没问题”更有帮助。</p>
+<p>把结论分成三层：<strong>直接看到的事实、由事实支持的推断、还没有验证的猜测</strong>。编译成功、函数返回成功、仪表测到稳态电压，都各自只说明一部分。这是本项目最值得带走的调试习惯。</p>
+<h2 id="17">17. 六周学习安排与教师验收</h2>
+<p>每周安排两到三次动手，每次约一到两小时只是建议节奏，按实际理解调整。已有 C 基础的人可以把前两周合并成四周路线；完全零基础不必赶进度。</p>
+<table>
+<thead>
+<tr>
+<th>周次</th>
+<th>主线</th>
+<th>应交出的证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第 1 周</td>
+<td>电学入门、接线、烧现成固件，实验 1</td>
+<td>自己标注的接口照片、烧录结果、运行记录</td>
+</tr>
+<tr>
+<td>第 2 周</td>
+<td>最小 C、main、GPIO、时间，实验 2～3</td>
+<td>一次灯周期修改、串口收发与非法命令记录</td>
+</tr>
+<tr>
+<td>第 3 周</td>
+<td>电位器、ADC、DMA、RMS，实验 4～5</td>
+<td>电压与 ADC 对照表、安静与吹气数据</td>
+</tr>
+<tr>
+<td>第 4 周</td>
+<td>状态机、游戏物理、绘图，实验 6～7</td>
+<td>游戏状态图、一个难度修改和画面修改</td>
+</tr>
+<tr>
+<td>第 5 周</td>
+<td>SPI、UART、PWM、协同运行，实验 8～9</td>
+<td>蜂鸣器影响记录、连续运行计数、黑屏案例解释</td>
+</tr>
+<tr>
+<td>第 6 周</td>
+<td>原理图/PCB阅读、外壳、复现交付，实验 10</td>
+<td>装配记录、版本包、另一个人的复现反馈</td>
+</tr>
+</tbody>
+</table>
+<p>教师不必只问“这个术语叫什么”。更有价值的是让学生带着板子、代码与测量回答：</p>
+<ol>
+<li>指出主板供电、下载、串口、屏幕四条连接分别在哪里，解释它们为何不能互换。</li>
+<li>不看教程写出 J2 的脚序，并指出最下面为什么是 1 脚。</li>
+<li>从 <code>main()</code> 找到 D2 闪烁的执行路径，改一次周期并恢复。</li>
+<li>用一组数字算出麦克风平均值和 RMS，解释“中心 2048”与“声音很大”的区别。</li>
+<li>解释 ADC 每通道 8000 点/秒、128 点一块、16ms 一块之间的关系。</li>
+<li>画出游戏四态，分别演示 <code>play</code>、<code>pause</code>、<code>resume</code>、<code>menu</code>。</li>
+<li>解释为什么 <code>mute on</code> 后还可吹气，而提示音后又有短暂声控抑制。</li>
+<li>用自己的话说明硬件 SPI 与软件 SPI 的区别，指出本次黑屏案例仍未证实哪一点。</li>
+<li>解释为什么 DRC 为零不保证按键内部接法正确，为什么不能直接复产原始 PCB。</li>
+<li>从未知故障中先提出三项可测证据，而非立即改十个参数。</li>
+<li>区分源码、ELF、HEX、BIN、Gerber、BOM、CPL、STL、STEP，给它们找对接收方。</li>
+<li>让另一位同学按文档复现，并把对方卡住的地方改进进教程。</li>
+</ol>
+<p>达标不要求背出所有 HAL 配置项。学生应能说明数据从哪里来、经过什么处理、结果到哪里去，完成一个受控修改，并保留足够证据让别人复现。</p>
+<h3 id="_3">选学：用已有采样链路做吉他调音</h3>
+<p>声音链路也能估计波形多久重复一次。每次累积 1024 点，即约 128ms 的音频，<code>pitch_begin()</code> 接收这一帧，<code>pitch_step()</code> 每次只比较少量候选周期。例如一个周期约 73 点，频率约为 <code>8000 / 73 ≈ 109.6Hz</code>，接近 A2 的 110Hz。</p>
+<p>发送 <code>tuner</code>，一次拨一根弦，观察最近的六弦标准音 E2、A2、D3、G3、B3、E4 和音分。0 音分接近目标，正值偏高，负值偏低。有效检测范围为 65～400Hz；静音、削顶、不连续采样或置信度不足时结果会无效。</p>
+<p>这部分先理解“周期→频率”即可，不要求初学阶段推导整个算法。实际调音精度还取决于时钟、模拟电路和环境，需要测量验证。程序把它作为教学扩展，没有把它作为专业调音仪的精度承诺。</p>
+<h2 id="18">18. 常用词随手查</h2>
+<table>
+<thead>
+<tr>
+<th>词</th>
+<th>在本项目里怎么理解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MCU / 单片机</td>
+<td>把 CPU、存储和常用外设集成在一起的小计算机</td>
+</tr>
+<tr>
+<td>固件</td>
+<td>烧在设备里、控制设备行为的程序</td>
+</tr>
+<tr>
+<td>GPIO</td>
+<td>可以配置为输入、输出等用途的通用引脚</td>
+</tr>
+<tr>
+<td>上拉</td>
+<td>通过一定电阻把未被外部拉低的输入偏向高电平</td>
+</tr>
+<tr>
+<td>复位 / NRST</td>
+<td>让芯片回到重新启动状态；NRST 是低有效复位信号</td>
+</tr>
+<tr>
+<td>SWD / ST-LINK</td>
+<td>芯片调试下载接口 / 连接电脑与此接口的下载器</td>
+</tr>
+<tr>
+<td>ADC</td>
+<td>把模拟电压变成数字</td>
+</tr>
+<tr>
+<td>DMA</td>
+<td>按配置自动搬运数据，减少 CPU 逐个搬的工作</td>
+</tr>
+<tr>
+<td>TIM / 定时器</td>
+<td>按时钟计数，可触发事件、中断或输出 PWM</td>
+</tr>
+<tr>
+<td>IRQ / NVIC</td>
+<td>中断请求 / Cortex-M 的中断管理单元</td>
+</tr>
+<tr>
+<td>PWM</td>
+<td>周期高低电平，可用频率和占空比描述</td>
+</tr>
+<tr>
+<td>UART</td>
+<td>按预先约定的速率和格式逐位收发数据的串口</td>
+</tr>
+<tr>
+<td>SPI</td>
+<td>用时钟同步数据传输的接口</td>
+</tr>
+<tr>
+<td>CS / DC / RST</td>
+<td>屏幕片选 / 命令数据区分 / 屏幕复位</td>
+</tr>
+<tr>
+<td>HSE / HSI / PLL</td>
+<td>外部时钟源 / 内部时钟源 / 将时钟变为所需频率的电路</td>
+</tr>
+<tr>
+<td>HAL</td>
+<td>芯片厂商提供的硬件操作接口库</td>
+</tr>
+<tr>
+<td>Flash / RAM</td>
+<td>断电保留的程序存储 / 运行时工作存储</td>
+</tr>
+<tr>
+<td>编译 / 链接</td>
+<td>把源码变为目标指令 / 将各部分安排成完整程序</td>
+</tr>
+<tr>
+<td>消抖</td>
+<td>等机械接点稳定后再确认一次动作</td>
+</tr>
+<tr>
+<td>状态机</td>
+<td>记住现在属于哪种情况，再按事件转到下一种情况</td>
+</tr>
+<tr>
+<td>缓冲区</td>
+<td>暂存待处理数据的数组或存储区域</td>
+</tr>
+<tr>
+<td>RMS</td>
+<td>偏差平方的平均值再开平方，本项目用来表示音量</td>
+</tr>
+<tr>
+<td>门限 / 标定</td>
+<td>判定输入达到条件的数值 / 根据实际背景重新设置参数</td>
+</tr>
+<tr>
+<td>削顶</td>
+<td>信号达到测量上下限，波峰无法完整记录</td>
+</tr>
+<tr>
+<td>PCB / SMT</td>
+<td>承载铜线和元件的电路板 / 表面贴装工艺</td>
+</tr>
+<tr>
+<td>封装 / 网络</td>
+<td>元件在板上的焊盘形状定义 / 电气上相连的一组点</td>
+</tr>
+<tr>
+<td>ERC / DRC / DFM</td>
+<td>电气规则检查 / 设计规则检查 / 可制造性检查</td>
+</tr>
+<tr>
+<td>勘误</td>
+<td>记录已经发现的问题、影响和修正要求</td>
+</tr>
+</tbody>
+</table>
+<p>日后继续学习时，可以在这个项目上练习修复按键、画一块简单的新板、增加一种传感器，再学习版本管理、更多通信接口和操作系统。先保留这次最朴素的习惯：知道每根线在做什么，每个变量表示什么，每次修改怎样验证。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

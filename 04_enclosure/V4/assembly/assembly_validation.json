@@ -1,0 +1,20 @@
+{
+  "shell_parts": 8,
+  "fit_coupon_excluded": true,
+  "pcb_components": 52,
+  "official_oled_solids": 165,
+  "reference_fasteners": 14,
+  "reference_washers": 6,
+  "housing_step_reimport_solids": 8,
+  "glb_objects": 247,
+  "glb_units": "metres; Z-up CAD converted to Y-up glTF",
+  "original_print_files_unchanged": true,
+  "notes": [
+    "Housing derived from validated V4 native STEP files",
+    "PCB uses saved final 52-component placement; electronic bodies and fasteners are illustrative",
+    "Wires omitted so mounting points remain visible",
+    "Original print files, rather than the assembled models, are used for manufacturing"
+  ],
+  "complete_step_reimport_solids": 247,
+  "complete_step_valid": true
+}

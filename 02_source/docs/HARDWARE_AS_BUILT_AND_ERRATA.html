@@ -1,0 +1,420 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>当前样板、接线与硬件勘误</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../../index.html">学习包首页</a><a href="HARDWARE_AS_BUILT_AND_ERRATA.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#1">1. 这块板目前验证到了哪里</a></li>
+<li><a href="#2">2. 先认清方向和编号</a></li>
+<li><a href="#3">3. 电源、下载器与串口各做什么</a><ul>
+<li><a href="#j3-st-link-v2">J3：小型 ST-LINK V2 下载</a></li>
+<li><a href="#j4usb">J4：USB 转串口</a></li>
+</ul>
+</li>
+<li><a href="#4-j2-242-ssd1309">4. J2：微雪 2.42 英寸 SSD1309 屏幕</a></li>
+<li><a href="#5">5. 声音、旋钮、指示灯和蜂鸣器</a><ul>
+<li><a href="#mk1">麦克风 MK1</a></li>
+<li><a href="#j5">电位器接 J5</a></li>
+<li><a href="#d1d2-bz1">D1、D2 和 BZ1</a></li>
+</ul>
+</li>
+<li><a href="#6">6. 必须理解的按键接法错误</a><ul>
+<li><a href="#_2">已有样板如何继续教学</a></li>
+<li><a href="#pcb">下一版 PCB 应怎样改</a></li>
+</ul>
+</li>
+<li><a href="#7-v4">7. V4 外壳资料怎么用</a></li>
+<li><a href="#8">8. 归档文件的含义和来源</a></li>
+<li><a href="#9-cad">9. CAD 脚本再生成注意事项</a></li>
+<li><a href="#10">10. 原始依据</a></li>
+</ul>
+</div>
+</details></aside><article><h1 id="_1">当前样板、接线与硬件勘误</h1>
+<p>更新：2026-09-23。先读本文，再使用归档中的 PCB、BOM 或外壳资料。</p>
+<blockquote>
+<p><strong>归档中的 2026-09-18 PCB 制造文件含已确认的 SW1～SW5 按键接法错误，不能照原样直接复产。</strong> 文件保留的是实际样板对应的设计，便于学习和排查；文件名中的 <code>REVIEWED</code>、旧文档中的“DRC 为 0”或“可打样”不代表按键电路正确。本次软件正式发布没有替你修改原理图、PCB、Gerber 或 SMT 文件。</p>
+</blockquote>
+<h2 id="1">1. 这块板目前验证到了哪里</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>当前证据与结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MCU 上电、下载和运行</td>
+<td>用户已确认 Normal/SWD 连接、读取和固件烧录运行，D2 正常短闪</td>
+</tr>
+<tr>
+<td>屏幕供电和接线</td>
+<td>用户实测屏端 VCC、RST 对 GND 均约 3.3V，五根控制线逐根导通且对应正确</td>
+</tr>
+<tr>
+<td>屏幕显示</td>
+<td>低速 GPIO 模拟 SPI 诊断图案成功；用户随后确认正常速度 GPIO SPI 游戏版测试正常</td>
+</tr>
+<tr>
+<td>原硬件 SPI 黑屏</td>
+<td>切换发送实现后恢复；尚未用波形证据确定根因，不能断言屏幕不支持硬件 SPI</td>
+</tr>
+<tr>
+<td>蜂鸣器</td>
+<td>本次按要求开启游戏音效；启用后的实板音量和对麦克风的影响仍需确认</td>
+</tr>
+<tr>
+<td>SW5 复位键</td>
+<td>按拆除 SW5 的隔离步骤处理后，用户报告 NRST 恢复约 3.15V，正常下载恢复；目前没有恢复该按键的验证记录</td>
+</tr>
+<tr>
+<td>SW1～SW4 游戏键</td>
+<td>同类触点接法错误，未找到返修完成的证据；固件屏蔽持续未释放的键，声控和串口仍可使用</td>
+</tr>
+<tr>
+<td>V4 外壳</td>
+<td>已有模型、静态干涉和分件网格检查；没有整套实物装配通过的记录</td>
+</tr>
+<tr>
+<td>全部接口、ADC 精度、调音精度和长时间运行</td>
+<td>不能由“游戏正常”一句推定全部通过，按教学实验逐项记录结果</td>
+</tr>
+</tbody>
+</table>
+<p>本文的“已确认”包括用户提供的现象，并不表示我们直接测过样板。</p>
+<h2 id="2">2. 先认清方向和编号</h2>
+<p>把 <strong>有元件的一面朝向自己，USB 接口放在上方，五个按键的位置放在下方</strong>。右侧竖直的 8 孔连接器是 J2。J2 <strong>最下方是 1 脚，最上方是 8 脚</strong>。</p>
+<pre><code class="language-text">           USB 在上方
+             J2
+        8  GND（备用）
+        7  RST
+        6  DC
+        5  CS
+        4  CLK
+        3  DIN
+        2  GND
+        1  3V3  ← 方形金属焊盘
+             J3（下载）
+             J4（串口）
+             J5（电位器）
+             J6、J7（扩展）
+         按键位置在下方
+</code></pre>
+<p>“方形焊盘”指 PCB 上的金属焊盘，所有排母插孔看上去都是方形，不可用塑料孔的形状判断 1 脚。J3～J7 的四个脚在这个观察方向下从左到右为 1、2、3、4；从板底观察会左右镜像。</p>
+<h2 id="3">3. 电源、下载器与串口各做什么</h2>
+<p>J1 Type-C 输入 USB 5V，U2 <code>AP2114H-3.3TRG1</code> 把它变为板上 3.3V。<strong>这块板的 Type-C 仅供电，不提供 USB 下载或 USB 串口功能。</strong> 下载用 J3，串口通信使用 J4。</p>
+<p>接线、改线、拔插屏幕前先关闭主板、下载器和 USB 转串口的供电。电压用通电后的直流电压档测；电阻和通断必须在全部断电后测。避免表笔同时碰到相邻脚。</p>
+<p>主板由 USB 供电时，小型 ST-LINK V2 的 3.3V/5V 输出和 USB 转串口的 VCC 均留空，避免两路电源相互连接。模块标有“3.3V”的电源脚不等于它的 TXD 一定是 3.3V 逻辑，应核实转换器的逻辑电平设置。</p>
+<h3 id="j3-st-link-v2">J3：小型 ST-LINK V2 下载</h3>
+<table>
+<thead>
+<tr>
+<th>J3 脚号</th>
+<th>主板信号</th>
+<th>接法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>+3V3</td>
+<td>当前小型 ST-LINK V2 接法留空，主板自行 USB 供电</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SWDIO / PA13</td>
+<td>下载器 SWDIO</td>
+</tr>
+<tr>
+<td>3</td>
+<td>SWCLK / PA14</td>
+<td>下载器 SWCLK</td>
+</tr>
+<tr>
+<td>4</td>
+<td>GND</td>
+<td>下载器 GND</td>
+</tr>
+</tbody>
+</table>
+<p>SWDIO 传输调试数据，SWCLK 提供时钟，GND 建立共同的电压参考。当前 J3 没有 NRST 引脚；已验证的软件设置为 SWD、100kHz、Normal、Software reset。正常更新程序不需要改 RDP 读保护或其他选项字节。</p>
+<p>若以后换成具有独立 <code>VTref</code> 电压检测输入的正规调试器，应按该调试器说明接检测端，不能照搬“小型下载器的 3.3V 电源输出留空”来判断所有设备。</p>
+<h3 id="j4usb">J4：USB 转串口</h3>
+<table>
+<thead>
+<tr>
+<th>J4 脚号</th>
+<th>主板信号</th>
+<th>USB 转串口一端</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>+3V3</td>
+<td>不接电源脚</td>
+</tr>
+<tr>
+<td>2</td>
+<td>UART_TX / PA9</td>
+<td>RXD</td>
+</tr>
+<tr>
+<td>3</td>
+<td>UART_RX / PA10</td>
+<td>TXD</td>
+</tr>
+<tr>
+<td>4</td>
+<td>GND</td>
+<td>GND</td>
+</tr>
+</tbody>
+</table>
+<p>主板的“说话端”TX 要接电脑转换器的“听话端”RX，所以 TX/RX 交叉。终端设 <strong>115200 波特率、8 数据位、无校验、1 停止位、无流控</strong>，命令末尾带换行。先发 <code>status</code> 或 <code>help</code>；小型 ST-LINK V2 本身不能替代这个串口模块。</p>
+<h2 id="4-j2-242-ssd1309">4. J2：微雪 2.42 英寸 SSD1309 屏幕</h2>
+<p>本壳体适配微雪 <code>2.42inch OLED Module</code> 白屏 SKU25742，模块外形 <strong>61.5×39.5mm</strong>，保持出厂 SPI 接口设置。早期讨论的 72×43mm 其他模块不属于本版适配对象。</p>
+<table>
+<thead>
+<tr>
+<th>J2 脚号</th>
+<th>屏幕标识</th>
+<th>对应信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1，最下方</td>
+<td>VCC</td>
+<td>+3V3</td>
+</tr>
+<tr>
+<td>2</td>
+<td>GND</td>
+<td>地</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DIN</td>
+<td>PA7，送入屏幕的数据</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CLK</td>
+<td>PA5，时钟</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CS</td>
+<td>PA4，片选</td>
+</tr>
+<tr>
+<td>6</td>
+<td>DC</td>
+<td>PB8，区分命令与像素数据</td>
+</tr>
+<tr>
+<td>7</td>
+<td>RST</td>
+<td>PB9，复位屏幕</td>
+</tr>
+<tr>
+<td>8，最上方</td>
+<td>不接</td>
+<td>备用 GND</td>
+</tr>
+</tbody>
+</table>
+<p>只用前七脚即可，八脚排母不代表屏幕需要八根线。按两端信号名对应，不按排线颜色猜测。<strong>当前 1 脚为 3V3、2 脚为 GND，早期 V3 接线表的电源顺序不能再使用。</strong></p>
+<p>GPIO 模拟 SPI 和硬件 SPI 都是在传输 SPI 信号；区别是由软件逐位改变引脚，还是交给 MCU 的专用外设自动发送。当前正式游戏沿用用户验证过的 GPIO Mode 0、高位先发方式，接线不变。写屏成功计数只说明程序完成发送，不具备“屏幕已收到并显示”的反馈能力。</p>
+<h2 id="5">5. 声音、旋钮、指示灯和蜂鸣器</h2>
+<h3 id="mk1">麦克风 MK1</h3>
+<p>板上 <code>CMA-6542PF</code> 驻极体麦克风通过偏置、耦合和 <code>LMV358</code> 模拟放大电路，将声音变化送到 MCU 的 PA0（ADC_AUDIO）。ADC 把电压转换成数字，程序从一组数字计算声音强度，再决定是否让小鸟上跳。</p>
+<p>已焊好的麦克风不需要再接外部信号线。不要向 PA0 或麦克风信号点接 5V。上电约 1.5 秒保持安静，给程序一个测量环境底噪的机会；短吹触发，持续大声不会无限连续上跳。</p>
+<h3 id="j5">电位器接 J5</h3>
+<table>
+<thead>
+<tr>
+<th>J5 脚号</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>+3V3，接电位器一个外侧端</td>
+</tr>
+<tr>
+<td>2</td>
+<td>PA1 / ADC_POT，接滑臂端</td>
+</tr>
+<tr>
+<td>3 或 4</td>
+<td>GND，接电位器另一个外侧端</td>
+</tr>
+</tbody>
+</table>
+<p>10kΩ 线性电位器可用于这个练习。三脚电位器通常中间脚是滑臂，但应以实物资料或电阻测量确认；只交换两个外侧端会反转旋转方向。默认不让旋钮改变声控门限，发 <code>pot on</code> 后启用；<code>pot off</code> 关闭。电位器提供的是 0～3.3V 范围内的模拟输入，不是用来给主板调供电电压。</p>
+<h3 id="d1d2-bz1">D1、D2 和 BZ1</h3>
+<table>
+<thead>
+<tr>
+<th>位号</th>
+<th>作用</th>
+<th>电路与软件关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>电源指示灯</td>
+<td>由 3.3V 经限流电阻供电，亮了不等于程序已启动</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>程序状态灯</td>
+<td>PC13 控制，低电平亮；正常游戏心跳短闪用于确认主循环仍在运行</td>
+</tr>
+<tr>
+<td>BZ1</td>
+<td>无源压电蜂鸣器</td>
+<td>PA8 经 R13 470Ω 到蜂鸣器，另一端接地；约 4kHz PWM 产生短音</td>
+</tr>
+</tbody>
+</table>
+<p>蜂鸣器不是扬声器或麦克风，不需要再接杜邦线。当前程序用定时器产生方波，设置到期时间后自动停音，不靠长时间等待。游戏音效开启后，程序短暂抑制声音触发，减少蜂鸣器被当成吹气；仍应实测同一外壳内的声学反馈。可发 <code>mute on</code> 关闭音效，<code>mute off</code> 开启；调音模式保持静音。</p>
+<h2 id="6">6. 必须理解的按键接法错误</h2>
+<p>四脚轻触开关不是四个互相独立的端子。本板使用 <code>TS-1187A-B-A-B</code>（C318884），其 <strong>1～2 脚内部常通、3～4 脚内部常通</strong>；按下才把这两组连在一起。</p>
+<p>在元件面、USB 在上的方向，当前封装如下：</p>
+<pre><code class="language-text">        左上 1 ═════ 2 右上    上排内部始终相连
+                ↓ 按下才接通 ↓
+        左下 3 ═════ 4 右下    下排内部始终相连
+</code></pre>
+<p>当前制造文件却把 1/3 接信号、2/4 接 GND，这就使信号经开关内部永久接地。SW5 的信号是 NRST，所以 MCU 一直处于复位；SW1～SW4 的信号是游戏按键输入，所以一直表现为按住。</p>
+<table>
+<thead>
+<tr>
+<th>按键</th>
+<th>信号</th>
+<th>MCU</th>
+<th>正确用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SW1</td>
+<td>KEY1</td>
+<td>PB15</td>
+<td>上跳 / 回到游戏</td>
+</tr>
+<tr>
+<td>SW2</td>
+<td>KEY2</td>
+<td>PB14</td>
+<td>暂停 / 继续</td>
+</tr>
+<tr>
+<td>SW3</td>
+<td>KEY3</td>
+<td>PB13</td>
+<td>游戏、自检、调音之间切换</td>
+</tr>
+<tr>
+<td>SW4</td>
+<td>KEY4</td>
+<td>PB12</td>
+<td>重新标定声音门限</td>
+</tr>
+<tr>
+<td>SW5</td>
+<td>NRST</td>
+<td>MCU 第 7 脚</td>
+<td>硬件复位</td>
+</tr>
+</tbody>
+</table>
+<p>当前固件将 SW1～SW4 设置为上拉输入，只有确认按键稳定释放后才接受按下事件；持续低电平的键会被屏蔽，<code>BLOCKED=F</code> 表示四键都没有正常释放。<strong>这只是让其他功能继续运行，不是修好了按键。</strong> 不得把 GPIO 改成输出高电平去“顶住”短接。</p>
+<h3 id="_2">已有样板如何继续教学</h3>
+<p>当前最简单的学习路线是保留已恢复运行的主板，先学声控、屏幕和串口；把按键返修作为独立硬件练习，由有贴片返修经验的人操作。拆焊前断开全部供电，不能硬撬焊盘。</p>
+<p>需要临时练习 GPIO 输入时，可由老师拆下对应的错误开关，确认信号已不再被短接，再用两根线外接一个经万用表确认“松开断路、按下导通”的两脚常开按钮：一根接该开关原 <strong>1 脚信号焊盘</strong>，另一根接原 <strong>2 脚 GND 焊盘</strong>。必须先移除原开关；原开关留在板上时，外接按钮不能解除短路。外接按钮和线束不属于原 V4 外壳的机械适配范围。</p>
+<p>SW5 拆除后可通过 USB 断电重启；若要外接复位按钮，使用同样的常开结构连接 NRST 与 GND。不要短接 NRST 到 3.3V，也不要为正常下载反复修改 RDP。这里没有提供已完成切线、飞线或已返修的样板证明。</p>
+<h3 id="pcb">下一版 PCB 应怎样改</h3>
+<p>一种正确分组是 <strong>1/2 全接信号，3/4 全接 GND</strong>，上下两组互换也可以。应修正原理图器件映射和 PCB，检查全部五个开关，再重新导出同一版本的工程、Gerber、BOM 和贴片坐标。</p>
+<p>不要将原开关简单旋转 90° 后强行装回：该封装横纵焊盘间距不同。返修和新版生产前，都应拿未安装的开关实测常通组，与封装编号逐一对应。DRC 检查线间距和网络连接，不会自动知道器件内部哪两个触点永久连接；这是本项目适合学习的一次真实问题。</p>
+<h2 id="7-v4">7. V4 外壳资料怎么用</h2>
+<p>外壳约 <strong>95×90×32.4mm</strong>，主板约 <strong>70×70×1.6mm</strong>。主板通过四角支承和板外压片固定，屏幕装在独立托架上，再固定到可拆主盖。</p>
+<ul>
+<li><code>print/</code> 中 9 个 STL：底壳、主盖、按键面板、屏托架、4 个主板压片、1 个公差试片。实际装入外壳的是前 8 件，试片不装入。</li>
+<li><code>step/</code> 是 9 个 EDA 原生分件 STEP；<code>assembly/</code> 中的 STEP/GLB 是完整装配展示，不能当一个零件整体打印。</li>
+<li><code>assembly/ASSEMBLY_GUIDE.md</code> 带完整装配、爆炸、主板固定和上盖翻面图，按其顺序和螺丝表装配。</li>
+<li>螺丝共 14 颗：M3×8 六颗、M3×6 两颗、M2×6 两颗、M2.5×5 四颗；屏托架相关的 6 颗螺丝使用图解中要求的垫片。</li>
+</ul>
+<p>先裸板运行，再断电试装。用公差试片检查孔径和螺丝配合，清理毛刺，检查插件脚、插头高度、线束弯曲和拆盖余量。不要靠玻璃、屏幕排线或背面元件承力，不用电批硬拧塑料柱。设计几何检查不代替实际打印公差和装配验证。</p>
+<p>V4 工程名称含“最新主板”，指 <strong>相对于 2026-09-18 的主板布局同步</strong>，不代表后来的按键错误已修正。外壳副本只用于外壳，PCB/SMT 的主板来源始终是 <code>Board1 → PCB1</code>；当前该主板仍需先完成上述按键修订。</p>
+<h2 id="8">8. 归档文件的含义和来源</h2>
+<p>这些是工作区原始来源路径，解压整包后请按总目录说明找到对应副本；不要求新电脑也使用 <code>/home/cunyu</code>。</p>
+<table>
+<thead>
+<tr>
+<th>原始来源</th>
+<th>用途和版本界限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/home/cunyu/outputs/flappy-bird-pcb-repair-20260918/Flappy_Bird_REVIEWED_20260918.epro2</code></td>
+<td>2026-09-18 主板工程归档，含已知按键错误</td>
+</tr>
+<tr>
+<td>同目录 <code>Flappy_Bird_PCB1_20260918_Gerber.zip</code></td>
+<td>原设计导出的 PCB 铜层、阻焊、丝印、外形和钻孔，不是已下载核对的工厂加工稿</td>
+</tr>
+<tr>
+<td>同目录 <code>Flappy_Bird_BOM_20260918.csv</code>、<code>Flappy_Bird_PCB1_CPL_20260918.csv</code></td>
+<td>52 个位号的物料表和贴片坐标，应与同版设计一起修订</td>
+</tr>
+<tr>
+<td>同目录 <code>pcb_final.json</code>、<code>schematic_source.json</code>、<code>schematic_netlist.json</code></td>
+<td>API 保存的最终设计快照，便于复核连接</td>
+</tr>
+<tr>
+<td>同目录 <code>RESET_DIAGNOSIS_20260922.md</code></td>
+<td>按键错误和复位故障的诊断记录，时间早于本次游戏实测</td>
+</tr>
+<tr>
+<td><code>/home/cunyu/outputs/flappy-bird-enclosure-sync-20260918/</code></td>
+<td>V4 外壳分件、完整工程、验证报告和 <code>assembly/</code> 装配图解</td>
+</tr>
+<tr>
+<td><code>/home/cunyu/outputs/flappy-bird-enclosure-v3/</code></td>
+<td>V4 沿用的外壳几何生成源、EDA 原生导出基准和微雪参考资料；其中旧主板与旧接线表不作为当前接线依据</td>
+</tr>
+<tr>
+<td><code>/home/cunyu/outputs/flappy-bird-enclosure/evidence/handoff.html</code></td>
+<td>最初交接材料，属于项目历史，含后续已经替换的屏幕/电路方案</td>
+</tr>
+</tbody>
+</table>
+<p><code>.epro2</code> 是可在立创 EDA 中打开的工程；Gerber 是给 PCB 工厂的分层制造文件；BOM 告诉贴片厂用什么器件；CPL 告诉贴片机把器件放在哪里、转多少度。STL 适合打印切片，STEP 适合 CAD 查看和再设计。它们各自承担不同工作，不能彼此替代。</p>
+<p>旧 <code>ORDER_GUIDE.md</code>、旧打包清单和历史报告是当时的记录。<strong>当它们与本文冲突时，当前接线与已知缺陷以本文为准。</strong> 工厂预览图曾出现两角圆形特征，但未获得可独立核验的工厂加工 Gerber；不把预览中的特征擅自解释为已确认的安装孔。</p>
+<h2 id="9-cad">9. CAD 脚本再生成注意事项</h2>
+<p>只查看或打印现有 STEP/STL 不需要运行 Python。进阶学习再运行生成脚本，先使用工程副本。</p>
+<p><code>flappy-bird-enclosure-sync-20260918/build_assembly_views.py</code> 通过相对目录读取自身 <code>validation.json</code>、<code>step/</code>，并读取相邻 <code>flappy-bird-enclosure-v3/easyeda/layout.json</code>、<code>reference/Waveshare_25742_official.step</code> 与相邻 <code>flappy-bird-pcb-repair-20260918/pcb_final.json</code>。复制源码时需保留这三个相邻目录名和相关文件。运行需要 CadQuery、NumPy、Pillow、trimesh、VTK 以及中文字体；脚本原字体路径为 <code>/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc</code>，其他系统需调整。</p>
+<p>V3 的 <code>cad/build_easyeda_native.py</code> 依赖本目录 <code>evidence/native_clean_baseline.json</code>，生成 EDA 外壳记录和排布表。V3 的 <code>cad/verify_enclosure.py</code> 依赖 <code>easyeda/layout.json</code>、<code>easyeda/export_step/</code>、<code>evidence/final_primary_components.json</code>、<code>reference/Waveshare_25742_official.step</code>，用于历史几何验证和导出。</p>
+<p>V4 的 <code>prepare_sync.py</code>、<code>verify_sync.py</code> 含开发机绝对路径，复用时要先调整；它们所需的历史快照和几何源不能只复制一个脚本就丢掉。<code>cad/eda_bridge.py</code> 还含历史工程 UUID 和本地 <code>127.0.0.1:49620</code> API 地址，涉及 EDA 文档创建、写入和导出，不属于新手烧录流程。先读脚本并改为自己的测试工程，再考虑执行；不要把历史请求直接发送到正在工作的主板工程。</p>
+<h2 id="10">10. 原始依据</h2>
+<ul>
+<li>接口网表与焊盘方向：归档 <code>pcb_final.json</code>、<code>after_routing_pass2.json</code>；本文逐脚表按它们核对。</li>
+<li>按键内部触点：<a href="https://datasheet.lcsc.com/datasheet/pdf/56c8799ae5193945a16a1ffbe378246a.pdf?productCode=C318884">XKB TS-1187A 数据表（立创承载）</a>，与 <code>RESET_DIAGNOSIS_20260922.md</code> 中的实测过程对应。</li>
+<li>MCU 型号及引脚：<a href="https://www.st.com/resource/en/datasheet/stm32f103c8.pdf">STM32F103x8/xB 官方数据表</a>。</li>
+<li>屏幕模型与尺寸：V3 <code>reference/SOURCES.md</code>、<code>Waveshare_25742_dimensions.pdf</code>、<code>Waveshare_25742_schematic.pdf</code>、<code>Waveshare_25742_official.step</code>。</li>
+</ul>
+<p>老师可把“资料写了什么、实际测到了什么、还不能推断什么”放在同一页记录。这比只记住一次成功现象更接近实际的嵌入式开发工作。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>

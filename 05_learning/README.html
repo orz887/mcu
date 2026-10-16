@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>学习与授课入口</title><style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f7f6f2;color:#243331;
+font:17px/1.85 system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif}a{color:#14645c;text-decoration-thickness:1px;text-underline-offset:3px}
+header{padding:20px 5vw;border-bottom:1px solid #d9dfd9;background:#fff;display:flex;gap:28px;flex-wrap:wrap;font-size:14px}
+header strong{letter-spacing:.04em}main{display:grid;grid-template-columns:250px minmax(0,930px);gap:44px;max-width:1290px;margin:40px auto;padding:0 24px}
+aside{font-size:13px;position:sticky;top:20px;align-self:start;max-height:92vh;overflow:auto;padding-right:14px}aside ul{list-style:none;padding-left:13px}aside li{margin:7px 0}
+article{min-width:0;padding:28px 42px 56px;background:white;border:1px solid #e1e5df;border-radius:8px}h1{font-size:32px;line-height:1.35;margin-top:0}h2{font-size:24px;margin-top:44px;padding-top:14px;border-top:1px solid #e0e6df}h3{font-size:20px;margin-top:30px}
+p,ul,ol{margin:15px 0}li{margin:6px 0}code{font:14px/1.7 Consolas,monospace;background:#edf2ef;padding:2px 5px;border-radius:3px}pre{background:#eef2ef;padding:18px;overflow:auto;border-left:3px solid #459283}pre code{padding:0;background:transparent}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:22px 0;display:block;overflow:auto}th,td{border:1px solid #dce4de;padding:9px 13px;vertical-align:top}th{background:#edf3ef;text-align:left}blockquote{margin:24px 0;padding:14px 20px;border-left:4px solid #b9872e;background:#fff7e7}blockquote p{margin:0}
+img{max-width:100%;height:auto;border-radius:4px}summary{font-weight:700;cursor:pointer}footer{color:#6b7770;font-size:12px;margin-top:36px}h2,h3{scroll-margin-top:20px}
+@media(max-width:1000px){main{display:block;margin:20px auto}aside{position:static;max-height:300px;margin-bottom:20px}article{padding:24px}h1{font-size:27px}}
+@media print{header,aside{display:none}main{display:block;margin:0;padding:0}article{border:0;padding:0}body{background:white;font-size:11pt}a{color:inherit}h2,h3{break-after:avoid}pre,blockquote,tr{break-inside:avoid}}
+</style><body><header><strong>声控小鸟 · 嵌入式入门 / v1.0.0</strong><a href="../index.html">学习包首页</a><a href="README.md">Markdown原文</a><span>离线可读 · 中文源码 · 实验记录</span></header><main><aside><details open><summary>本页目录</summary><div class="toc">
+<ul></ul>
+</div>
+</details></aside><article><h1 id="_1">学习与授课入口</h1>
+<ol>
+<li><a href="../02_source/docs/COURSE_ZERO_TO_EMBEDDED.html">零基础完整课程</a>：从基础电学到10个实验，贯穿硬件、固件、制造和装配。</li>
+<li><a href="../02_source/docs/HARDWARE_AS_BUILT_AND_ERRATA.html">硬件实物与勘误</a>：先确认主板版本、脚号、电源和按键问题。</li>
+<li><a href="../02_source/docs/GAME_QUICKSTART.html">第一次烧录与游戏操作</a>：先取得可以观察的结果。</li>
+<li><a href="../02_source/docs/BEGINNER_GUIDE.html">从main读代码的设计指南</a>：逐段理解已经在板上运行的程序。</li>
+<li><a href="../02_source/docs/DESIGN.html">详细设计</a>与<a href="../02_source/docs/VERIFICATION.html">验证记录</a>：学习如何记录设计依据和验证边界。</li>
+<li><a href="../02_source/docs/OLED_BLACK_SCREEN.html">真实黑屏排查过程</a>：看到现象、提出假设、控制变量、留下证据。</li>
+</ol>
+<p><img alt="项目功能链路" src="project_flow.svg" /></p>
+<p>建议老师每次课只安排一个可验证的小目标：学生先预测修改后的现象，再动手，最后解释结果。按键硬件返修应由有经验的人处理，学生可以先通过声控和串口完成软件实验。</p><footer>教学正式版 1.0.0 · 2026-09-23。硬件生产前先核对勘误。</footer></article></main></body></html>
